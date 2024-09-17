@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="A800-1" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="A800-1">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="TnT">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="TuTu">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="test@210.45.70.162:1743 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1703 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1721 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1722 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/data/yzzhao/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1723 password">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1723 password (2)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1741 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/data2/yzzhao/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1741 password (2)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/data2/yzzhao/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="yzzhao@210.45.70.162:1741 password (3)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/data2/yzzhao/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="826dd172-6687-4c84-87a0-40d132e058c2" name="yzzhao@210.45.70.162">
+        <fileTransfer rootFolder="/data/yzzhao" accessType="SFTP" host="210.45.70.162" port="1722" sshConfigId="057db039-dfe5-44d2-9383-5d9338877785" sshConfig="yzzhao@210.45.70.162:1722 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="1123e4af-f431-4ceb-833a-c858b043a45d" name="A800-1">
+        <fileTransfer rootFolder="/data2/yzzhao" accessType="SFTP" host="210.45.70.162" port="1741" sshConfigId="c8f2c95a-23e1-4e36-b47e-8124da15abbb" sshConfig="yzzhao@210.45.70.162:1741 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
