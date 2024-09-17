@@ -14,6 +14,7 @@ from prompts.arc import (
     rule_to_output_prompt_with_format,
     rule_to_python_prompt,
     rule_with_feedback_prompt,
+    coc_prompt,
 )
 from tasks.base import PythonTask
 from utils.query_utils import get_cost, query_batch_struct
@@ -35,6 +36,7 @@ class ARC(PythonTask):
 
         if self.rule_type == "python":
             self.rule_prompt = python_rule_prompt
+            self.coc_prompt = coc_prompt
         else:
             self.rule_prompt = structured_rule_prompt
         self.example_prompt = example_prompt

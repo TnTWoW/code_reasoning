@@ -89,3 +89,85 @@ Input: {test_input}
 Please format your output as follows:
 
 Output: <Your output>"""
+
+coc_prompt = """Task description: Map the given 5*5 input matrix to their corresponding 5*5 output matrix.
+
+Q:
+Input: [[2, 2, 2, 0, 0], [2, 1, 1, 1, 0], [2, 1, 8, 8, 8], [0, 1, 8, 8, 8], [0, 0, 8, 8, 8]]
+Output: [[2, 2, 2, 0, 0], [2, 2, 2, 1, 0], [2, 2, 2, 1, 8], [0, 1, 1, 1, 8], [0, 0, 8, 8, 8]]
+
+A:
+# CODE START
+import numpy as np
+import copy
+input_list = [[2, 2, 2, 0, 0], [2, 1, 1, 1, 0], [2, 1, 8, 8, 8], [0, 1, 8, 8, 8], [0, 0, 8, 8, 8]]
+output_list = copy.deepcopy(input_list)
+up_value, down_value = input_list[-1][-1], input_list[0][0]
+output_list[0][0], output_list[0][1], output_list[0][2], output_list[1][0], output_list[2][0] = up_value, up_value, up_value, up_value, up_value
+for i in range(2, 4):
+    for j in range(2, 4):
+        output_list[i][j] = down_value
+output_arr = np.array(output_list)
+output_arr = np.flipud(np.fliplr(output_arr))
+output_list = output_arr.tolist()
+# CODE END
+# TRACE START
+state: {{}}
+line: import numpy as np
+explanation: Python execution.
+delta state: {{}}
+line: import copy
+explanation: Python execution.
+delta state: {{}}
+line: input_list = [[2, 2, 2, 0, 0], [2, 1, 1, 1, 0], [2, 1, 8, 8, 8], [0, 1, 8, 8, 8], [0, 0, 8, 8, 8]]
+explanation: Python execution.
+delta state: {{'input_list': [[2, 2, 2, 0, 0], [2, 1, 1, 1, 0], [2, 1, 8, 8, 8], [0, 1, 8, 8, 8], [0, 0, 8, 8, 8]]}}
+line: output_list = copy.deepcopy(input_list)
+explanation: Python execution.
+delta state: {{'output_list': [[2, 2, 2, 0, 0], [2, 1, 1, 1, 0], [2, 1, 8, 8, 8], [0, 1, 8, 8, 8], [0, 0, 8, 8, 8]]}}
+line: up_value, down_value = input_list[-1][-1], input_list[0][0]
+explanation: Python execution.
+delta state: {{'up_value': 8, 'down_value': 2}}
+line: output_list[0][0], output_list[0][1], output_list[0][2], output_list[1][0], output_list[2][0] = up_value, up_value, up_value, up_value, up_value
+explanation: Python execution.
+delta state: {{'output_list': [[8, 8, 8, 0, 0], [8, 1, 1, 1, 0], [8, 1, 8, 8, 8], [8, 1, 8, 8, 8], [8, 0, 8, 8, 8]]}}
+line: for i in range(2, 4):
+explanation: Python execution.
+delta state: {{}}
+line:     for j in range(2, 4):
+explanation: Python execution.
+delta state: {{}}
+line:         output_list[i][j] = down_value
+explanation: Python execution.
+delta state: {{'output_list': [[8, 8, 8, 0, 0], [8, 1, 1, 1, 0], [8, 1, 2, 2, 2], [8, 1, 2, 2, 2], [8, 0, 2, 2, 2]]}}
+line: output_arr = np.array(output_list)
+explanation: Python execution.
+delta state: {{'output_arr': array([[8, 8, 8, 0, 0], [8, 1, 1, 1, 0], [8, 1, 2, 2, 2], [8, 1, 2, 2, 2], [8, 0, 2, 2, 2]])}}
+line: output_arr = np.flipud(np.fliplr(output_arr))
+explanation: Python execution.
+delta state: {{'output_arr': array([[2, 2, 2, 0, 0], [2, 2, 2, 1, 0], [2, 2, 2, 1, 8], [0, 1, 1, 1, 8], [0, 0, 8, 8, 8]])}}
+line: output_list = output_arr.tolist()
+explanation: Python execution.
+delta state: {{'output_list': [[2, 2, 2, 0, 0], [2, 2, 2, 1, 0], [2, 2, 2, 1, 8], [0, 1, 1, 1, 8], [0, 0, 8, 8, 8]]}}
+# TRACE END
+'''python
+def fn(x):
+    import numpy as np
+    import copy
+    input_list = [[2, 2, 2, 0, 0], [2, 1, 1, 1, 0], [2, 1, 8, 8, 8], [0, 1, 8, 8, 8], [0, 0, 8, 8, 8]]
+    output_list = copy.deepcopy(input_list)
+    up_value, down_value = input_list[-1][-1], input_list[0][0]
+    output_list[0][0], output_list[0][1], output_list[0][2], output_list[1][0], output_list[2][0] = up_value, up_value, up_value, up_value, up_value
+    for i in range(2, 4):
+        for j in range(2, 4):
+            output_list[i][j] = down_value
+    output_arr = np.array(output_list)
+    output_arr = np.flipud(np.fliplr(output_arr))
+    output_list = output_arr.tolist()
+    return output_list
+'''
+
+Q:
+{examples}
+A:
+"""

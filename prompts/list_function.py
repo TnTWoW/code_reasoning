@@ -146,3 +146,69 @@ def fn(x):
     # Your code here
 ```
 `"""
+
+coc_prompt = """Task description: Map the given input list to their corresponding output list.
+
+Q:
+Input: [1, 9, 0, 5, 3, 6, 2, 7]
+Output: [0, 0, 0, 5, 3, 6, 2, 7]
+
+A:
+# CODE START
+input_list = [1, 9, 0, 5, 3, 6, 2, 7]
+output_list = input_list
+num = input_list[2]
+output_list[0], output_list[1] = num, num
+# CODE END
+# TRACE START
+state: {{}}
+line: input_list = [1, 9, 0, 5, 3, 6, 2, 7]
+explanation: Python execution.
+delta state: {{'input_list': [1, 9, 0, 5, 3, 6, 2, 7]}}
+line: output_list = input_list
+explanation: Python execution.
+delta state: {{'input_list': [1, 9, 0, 5, 3, 6, 2, 7], 'output_list': [1, 9, 0, 5, 3, 6, 2, 7]}}
+line: num = input_list[2]
+explanation: Python execution.
+delta state: {{'input_list': [1, 9, 0, 5, 3, 6, 2, 7], 'output_list': [1, 9, 0, 5, 3, 6, 2, 7], 'num': 0}}
+line: output_list[0], output_list[1] = num, num
+explanation: Python execution.
+delta state: {{'input_list': [0 ,0, 0, 5, 3, 6, 2, 7], 'output_list': [0, 0, 0, 5, 3, 6, 2, 7], 'num': 0}}
+# TRACE END
+'''python
+def fn(x):
+    input_list = x
+    output_list = input_list
+    num = input_list[2]
+    output_list[0], output_list[1] = num, num
+    return output_list
+'''
+
+Q:
+Input: [3, 7, 1, 2, 6, 9, 0, 4, 8, 5]
+Output: [3, 7, 1, 2, 6, 9, 0, 4, 8, 5, 7, 3, 8, 4, 3]
+
+A: # CODE START
+input_list = [3, 7, 1, 2, 6, 9, 0, 4, 8, 5]
+output_list = input_list + [7, 3, 8, 4, 3]
+# CODE END
+# TRACE START
+state: {{}}
+line: input_list = [3, 7, 1, 2, 6, 9, 0, 4, 8, 5]
+explanation: Python execution.
+delta state: {{'input_list': [3, 7, 1, 2, 6, 9, 0, 4, 8, 5]}}
+line: output_list = input_list + [7, 3, 8, 4, 3]
+explanation: Python execution.
+delta state: {{'input_list': [3, 7, 1, 2, 6, 9, 0, 4, 8, 5], 'output_list': [3, 7, 1, 2, 6, 9, 0, 4, 8, 5, 7, 3, 8, 4, 3]}}
+# TRACE END
+'''python
+def fn(x):
+    input_list = x
+    output_list = input_list + [7, 3, 8, 4, 3]
+    return output_list
+'''
+
+Q:
+{examples}
+A:
+"""

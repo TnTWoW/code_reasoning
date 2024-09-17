@@ -131,6 +131,7 @@ NAME_TO_TASK = {
     "list_function": ListFunction,
     "arc": ARC,
     "robust_fill": RobustFill,
+    # TODO "deepcoder": DeepCoder,
     # "acre": ACRE,
     # "scan": SCAN,
 }

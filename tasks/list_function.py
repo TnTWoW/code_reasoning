@@ -16,6 +16,7 @@ from prompts.list_function import (
     rule_with_feedback_prompt,
     llama_python_rule_prompt,
     llama_rule_with_feedback_prompt,
+    coc_prompt,
 )
 from tasks.base import PythonTask
 from utils.format_utils import str_to_list
@@ -39,9 +40,11 @@ class ListFunction(PythonTask):
             if 'Llama' in self.model_name:
                 self.rule_prompt = llama_python_rule_prompt
                 self.rule_with_feedback_prompt = llama_rule_with_feedback_prompt
+                self.coc_prompt = coc_prompt
             else:
                 self.rule_prompt = python_rule_prompt
                 self.rule_with_feedback_prompt = rule_with_feedback_prompt
+                self.coc_prompt = coc_prompt
         elif self.rule_type == "noisy":
             self.rule_prompt = noisy_rule_prompt
             self.rule_with_feedback_prompt = nosiy_rule_with_feedback_prompt

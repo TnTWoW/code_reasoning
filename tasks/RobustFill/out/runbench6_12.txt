@@ -1,0 +1,20 @@
+1 bench If(Exact(Left(var_0, 1), "-"), var_0, Concatenate("+", var_0))
+..............14209
+If(Exact("-", Left(var_0, 1)), var_0, Concatenate("+", var_0))
+2 bench Concatenate(Left(Proper(var_0), Minus(Len(var_0), 1)), Upper(Right(var_0, 1)))
+.........9820
+Concatenate(Left(Proper(var_0), Minus(Len(var_0), 1)), Right(Upper(var_0), 1))
+3 bench Replace(Lower(var_0), 1, 1, Upper(Left(var_0, 1)))
+..2954
+Replace(Lower(var_0), 1, 1, Upper(Left(var_0, 1)))
+4 bench Concatenate(Mid(var_0, 3, 2), Concatenate("/", Replace(var_0, 3, 2, "/")))
+...............15135
+Concatenate(Mid(var_0, 3, 2), Concatenate("/", Replace(var_0, 3, 2, "/")))
+5 bench Substitute(var_0, "-", "/")
+57
+Substitute(var_0, "-", "/")
+6 bench Substitute(Right(var_0, 5), "-", "/")
+244
+Right(Substitute(var_0, "-", "/"), 5)
+7 bench Mid(var_0, Add(Find("//", var_0), 2), Minus(Minus(FindI("/", var_0, 9), Find("/", var_0)), 2))
+.................................................................................................
