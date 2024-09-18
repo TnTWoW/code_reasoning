@@ -7,7 +7,7 @@ from tasks.arc import ARC
 from tasks.list_function import ListFunction
 from tasks.robust_fill import RobustFill
 # from tasks.scan import SCAN
-from utils.io_utils import read_jsonl, write_json
+from utils.io_utils import read_jsonl, write_json, read_robustfill_json
 from utils.query_utils import CACHE_FILE, HISTORY_FILE
 
 
@@ -32,96 +32,98 @@ def parse_args():
         "--mode",
         type=str,
         default="query",
-        choices=["generate", "query"],
+        choices=["generate", "query"], # 用query模式
         help="Set the mode to generate or query.",
     )
     parser.add_argument(
         "--model_name",
         type=str,
-        required=True,
+        default="gpt4o-2024-08-13",
+        required=True, # 用gpt4o-202408-13
         help="Name of the model.",
     )
     parser.add_argument(
         "--task_name",
         type=str,
-        required=True,
+        default="arc",
+        required=True, # 用robust_fill/Deepcoder
         help="Name of the task.",
     )
     parser.add_argument(
         "--n_train",
         type=int,
-        default=None,
+        default=None,# buguan
         help="Number of examples to train.",
     )
     parser.add_argument(
         "--n_test",
         type=int,
-        default=None,
+        default=None,# buguan 默认是全部
         help="Number of examples to test.",
     )
     parser.add_argument(
         "--n_samples",
         type=int,
-        default=1,
+        default=1, # 1
         help="Number of examples to sample.",
     )
     parser.add_argument(
         "--n_examples",
         type=int,
-        default=None,
+        default=None, # 每次用到的数据个数
         help="Number of examples to evaluate",
     )
     parser.add_argument(
         "--max_iter",
         type=int,
-        default=1,
+        default=1, # 迭代次数
         help="Number of iterations",
     )
     parser.add_argument(
         "--temperature",
         type=float,
-        default=0.0,
+        default=0.0, # 0.7
         help="Temperature for sampling",
     )
     parser.add_argument(
         "--method",
         type=str,
-        default="rule",
+        default="rule", #不变
         help="Method to use",
     )
     parser.add_argument(
         "--rule_type",
         type=str,
-        default="default",
+        default="default", #nl
         help="Rule type to use",
     )
     parser.add_argument(
         "--interpreter_type",
         type=str,
-        default="default",
+        default="default", #不变
         help="Interpreter type to use",
     )
     parser.add_argument(
         "--cache_file",
         type=str,
-        default=None,
+        default=None, #自己设
         help="Path to the cache file.",
     )
     parser.add_argument(
         "--history_file",
         type=str,
-        default=None,
+        default=None, #自己设
         help="Path to the history file.",
     )
     parser.add_argument(
         "--verbose",
-        action="store_true",
+        action="store_true", #不变
         help="Whether to print out the intermediate results.",
     )
     parser.add_argument(
         "--eval_every",
         type=int,
-        default=-1,
+        default=-1, #不变
         help="Evaluate every n iterations.",
     )
     return parser.parse_args()
@@ -131,6 +133,8 @@ NAME_TO_TASK = {
     "list_function": ListFunction,
     "arc": ARC,
     "robust_fill": RobustFill,
+    # TODO：添加其他任务（deepcoder，robustfill）
+    # "deepcoder": DeepCoder,
     # "acre": ACRE,
     # "scan": SCAN,
 }
@@ -168,7 +172,10 @@ def main():
         args.cache_file = os.path.join(dirname, CACHE_FILE)
     if args.history_file is None:
         args.history_file = os.path.join(dirname, HISTORY_FILE)
-    data = read_jsonl(args.data_file)
+    if args.task_name == "robust_fill":
+        data = read_robustfill_json(args.data_file)
+    else:
+        data = read_jsonl(args.data_file)
     if args.n_examples is not None:
         data = data[: args.n_examples]
     task = NAME_TO_TASK[args.task_name](

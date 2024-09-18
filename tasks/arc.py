@@ -229,3 +229,17 @@ class ARC(PythonTask):
 
     def get_python_input(self, input):
         return input
+    
+    def run(self):
+        if self.method == "io":
+            self.eval_io()
+        else:
+            self.eval_rule()
+
+        metrics = self.metrics[-1]
+        acc = metrics["test_acc"] * 100
+        instance_acc = metrics["test_instance_acc"] * 100
+        outputs = self.to_dict()
+        logger.info(f"Mean accuracy: {acc:.2f}, instance accuracy: {instance_acc:.2f}")
+        logger.info(f"Total cost: {self.cost}")
+        return outputs

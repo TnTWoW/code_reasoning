@@ -17,7 +17,7 @@ from tqdm.asyncio import tqdm_asyncio
 
 ANTHROPIC_CLIENT = anthropic.AsyncAnthropic()
 
-HISTORY_FILE = "history.jsonl"
+HISTORY_FILE = "/Users/fengwenjun/Desktop/CODE/Code_Resoning/code_reasoning/results/history.jsonl"
 CACHE_FILE = "query_cache.pkl"
 EXP_CAP = 4
 
@@ -47,7 +47,7 @@ class Step(BaseModel):
     input: str
     output: str
 
-class CodeReasoning(BaseModel):
+class CodeReasoning(BaseModel): #重要的理解地方
     steps: list[Step]
     rule: str
 
@@ -81,6 +81,7 @@ async def query_openai_struct(
         wait_time = (1 << min(i, EXP_CAP)) + random() / 10
         try:
             response = await aclient.beta.chat.completions.parse(model=model_name, messages=messages, response_format=CodeReasoning, **kwargs)
+            print("history_file : ", history_file)
             with open(history_file, "a") as f:
                 f.write(json.dumps((model_name, messages, kwargs, response.to_json())) + "\n")
             if any(choice.finish_reason != "stop" for choice in response.choices):
@@ -95,7 +96,7 @@ async def query_openai_struct(
             openai.AuthenticationError,
             openai.APIStatusError,
             openai.APIError,
-            openai.Timeout,
+            openai.APITimeoutError,
             openai.APIConnectionError,
             openai.InternalServerError,
             openai.RateLimitError,
@@ -453,7 +454,7 @@ def query_batch_struct(
             unseen_prompts_batch = unseen_prompts[start : start + batch_size]
             unseen_histories_batch = unseen_histories[start : start + batch_size]
             if model_name in GPT_MODELS:
-                responses = query_batch_wrapper(
+                responses = query_batch_wrapper( #重要的地方，开始调用api的地方
                     query_openai_struct,
                     unseen_prompts_batch,
                     model_name,

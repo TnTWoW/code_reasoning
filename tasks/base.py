@@ -524,7 +524,8 @@ class PythonTask(Task):
     """Task that uses Python interpreter."""
 
     def get_python_input(self, input):
-        return ast.literal_eval(input)
+        return input
+        # return ast.literal_eval(input)
 
     def get_rule(self, response):
         if self.rule_type == "python":

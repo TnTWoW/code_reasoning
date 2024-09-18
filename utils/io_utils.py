@@ -1,6 +1,19 @@
 import json
 import pickle
 
+def read_robustfill_json(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            # 将 JSON 对象中的值转换为列表
+            data_list = [value for key, value in sorted(data.items(), key=lambda item: int(item[0]))]
+            return data_list
+    except FileNotFoundError:
+        print(f"Error: File not found: {file_path}")
+    except json.JSONDecodeError as e:
+        print(f"Error: JSON decode error: {e}")
+    except Exception as e:
+        print(f"Error: An unexpected error occurred: {e}")
 
 def read_jsonl(filename, n=None):
     lines = []
