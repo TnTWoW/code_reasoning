@@ -7,6 +7,7 @@ from tasks.arc import ARC
 from tasks.list_function import ListFunction
 from tasks.robust_fill import RobustFill
 from tasks.cruxeval import CruxEvalInput, CruxEvalOutput
+from tasks.livecodebench import LiveCodeBenchInput, LiveCodeBenchOutput
 # from tasks.scan import SCAN
 from utils.io_utils import read_jsonl, write_json
 from utils.query_utils import CACHE_FILE, HISTORY_FILE
@@ -134,8 +135,8 @@ NAME_TO_TASK = {
     "robust_fill": RobustFill,
     "cruxeval_input": CruxEvalInput,
     "cruxeval_output": CruxEvalOutput,
-    "livecodebench_input": CruxEvalInput,
-    "livecodebench_output": CruxEvalOutput,
+    "livecodebench_input": LiveCodeBenchInput,
+    "livecodebench_output": LiveCodeBenchOutput,
     # "acre": ACRE,
     # "scan": SCAN,
 }
