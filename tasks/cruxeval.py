@@ -1,6 +1,7 @@
 import logging
 import re
 import numpy as np
+import ast
 
 from prompts.cruxeval import (
     input_prompt,
@@ -16,12 +17,18 @@ from utils.format_utils import format_grid, format_list, str_to_list, unformat_g
 from utils.query_utils import CLAUDE_MODELS
 
 logger = logging.getLogger(__name__)
+PRINT_NUM = 3
+def safe_literal_eval(value):
+    try:
+        return ast.literal_eval(value)
+    except (ValueError, SyntaxError):
+        # 处理异常时可以选择返回 None 或其他默认值
+        return None
 
 class CruxEvalInput(Task):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.io_prompt = input_prompt
-
 
 class CruxEvalOutput(Task):
     def __init__(self, **kwargs):
@@ -55,18 +62,36 @@ class CruxEvalOutput(Task):
         pattern = r'==\s*(.*?)\s*```'
         results = re.findall(pattern, text)
         if not results:
-            return text
+            return ""
         return results[-1]
+
+    def extract_rules(self, response):
+        response = response
+        pattern = r'Analysis:(.*?)Answer:'
+        results = re.findall(pattern, response, re.DOTALL)
+        if not results:
+            return response
+        return results[-1].strip()
     def apply_all_rules(self, idxs, all_rules, all_examples):
         pass
     def get_metrics(self, answers: list) -> dict:
         all_outputs = self.get_all_examples("output")
-        acc = np.mean([eval(a) == eval(o) for a, o in zip(answers, all_outputs)])
+        acc = np.mean([safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)])
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
         }
         return output_dict
+
+    def eval_test_from_rule(self, responses):
+        assert all([response is not None for response in responses])
+        answers = [self.extract_output_prediction(response) for response in responses]
+        output_dict = self.get_metrics(answers)
+        return output_dict
+    def get_feedback(self, code, input, rule, p_output, output):
+        if safe_literal_eval(p_output) != ast.literal_eval(output):
+            return self.rule_with_feedback_prompt.format(code=code, input=input, rule=rule, p_output=p_output)
+        return ""
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_inputs = self.get_all_examples("input")
@@ -88,3 +113,61 @@ class CruxEvalOutput(Task):
         metrics = self.get_metrics(responses)
         self.metrics.append(metrics)
 
+    def eval_rule(self):
+        all_codes = self.get_all_examples("code")
+        all_inputs = self.get_all_examples("input")
+
+        prompts = []
+        idxs = []
+        for i, (code, input) in enumerate(zip(all_codes, all_inputs)):
+            prompt = self.rule_prompt.format(code=code, input=input)
+            prompts.append(prompt)
+            idxs.append(i)
+        idx_to_response = [None for _ in range(len(self.data))]
+
+        for i in range(self.max_iter):
+            logger.info(
+                f"======= Iteration {i}: query {len(prompts)} examples =========="
+            )
+            histories = self.get_histories(idxs)
+            assert len(histories) == len(idxs)
+            responses = self.query(prompts, idxs, histories=histories)
+            if self.n > 1:
+                all_train_examples = self.get_all_examples("train", idxs)
+                logger.info(f"Reranking {len(all_train_examples)} train examples...")
+                if self.verbose:
+                    logger.info(f"Responses before reranking:")
+                    for res in responses[:PRINT_NUM]:
+                        logger.info(res)
+                responses = self.get_best_responses(idxs, all_train_examples, responses)
+            for idx, response in zip(idxs, responses):
+                idx_to_response[idx] = response
+
+            rules = [self.extract_rules(response) for response in responses]
+            self.add_rules(idxs, rules)
+
+            if self.max_iter > 1:
+                self.add_histories("user", idxs, prompts)
+                self.add_histories("assistant", idxs, responses)
+
+                all_train_outputs = [self.extract_output_prediction(response) for response in responses]
+                all_outputs = self.get_all_examples("output", idxs)
+                prompts = []
+                new_idxs = []
+                for idx, rule, code, input, train_outputs, outputs in zip(
+                        idxs, rules, all_codes, all_inputs, all_train_outputs, all_outputs
+                ):
+                    prompt = self.get_feedback(code, input, rule, train_outputs, outputs)
+                    if prompt == "":
+                        continue
+                    prompts.append(prompt)
+                    new_idxs.append(idx)
+                idxs = new_idxs
+
+                if len(prompts) == 0:
+                    logger.info(f"No more feedback, break at iteration {i}")
+                    break
+
+        if self.eval_every <= 0:
+            metrics = self.eval_test_from_rule(idx_to_response)
+            self.metrics.append(metrics)

@@ -151,15 +151,16 @@ assert f("hi") == "bhihia"
 """
 
 rule_output_prompt = """You are given a piece of Python function. Please analyze the functionality of the Python 
-code step by step, and based on the input {input} and the function's purpose, provide the full assertion with the 
+code step by step, and based on the input and the function's purpose, provide the full assertion with the 
 correct output.
 
 '''python
 {code}
+# assert f({input}) == ??
 '''
 
 Please provide the analysis and the assertion in the following format:
-Your analysis: <Your analysis>
+Analysis: <Your analysis>
 Answer:
 ```python
 assert f({input}) == <Your output>
@@ -174,11 +175,11 @@ rule_with_feedback_output_prompt = """You are given a piece of Python function:
 
 And the following is your analysis of the code: {rule}
 
-The predicted output {p_output} based on your analysis does not match the actual execution result {output}. Please reflect 
+The predicted output {p_output} based on your analysis does not match the actual execution result. Please reflect 
 on the potential errors in the analysis steps and provide the full assertion with the correct output.
 
 Please provide the analysis and the assertion in the following format:
-Your analysis: <Your analysis>
+Analysis: <Your analysis>
 Answer:
 ```python
 assert f({input}) == <Your output>
