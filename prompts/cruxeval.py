@@ -46,6 +46,83 @@ assert f(16) == 17
 Let's analyze the code step by step:
 """
 
+coc_input_prompt = """You will be given a function f and an output in the form f(??) == output. Your task is to find 
+any input such that executing f on the input leads to the given output. There may be multiple answers, 
+but only output one. First, analysis the program step by step. Express your answer as a passing assertion containing the input and 
+the given output.
+
+```python
+def f(s):
+    s = s + s
+    result = "b" + s + "a"
+    return result
+# assert f(??) == "bhihia"
+# Let us assume the input is 'hi'
+f('hi')
+```
+[TRACE]
+state: {}
+line: f("hi")
+explanation: Python execution.
+delta state: {'s': 'hi'}
+line: s = s + s
+explanation: Python execution.
+delta state: {'s': 'hihi'}
+line: result = "b" + s + "a"
+explanation: Python execution.
+delta state: {'result': 'bhihia'}
+line: return result
+explanation: Python execution.
+delta state: {}
+[/TRACE]
+Answer:
+```python
+assert f("hi") == "bhihia"
+```
+
+```python
+{code}
+# assert f(??) == {output}
+"""
+
+rule_input_prompt = """You will be given a function f and an output in the form f(??) == output. Your task is to find 
+any input such that executing f on the input leads to the given output. There may be multiple answers, 
+but only output one. First, analysis the program step by step. Express your answer as a passing assertion containing the
+input and the given output.
+
+```python
+{code}
+# assert f(??) == {output}
+```
+
+Please provide the analysis and the assertion in the following format:
+Analysis: <Your analysis>
+Answer:
+```python
+assert f(<Your input>) == {output}
+```
+"""
+
+rule_with_feedback_input_prompt = """You are given a piece of Python function:
+
+'''python
+{code}
+'''
+
+And the following is your analysis of the code: {rule}
+
+The predicted input {p_input} based on your analysis does not match the actual execution result. Please reflect 
+on the potential errors in the analysis steps and provide the full assertion with the correct input.
+
+Please provide the analysis and the assertion in the following format:
+Analysis: <Your analysis>
+Answer:
+```python
+assert f(<Your input>) == {output}
+```
+
+"""
+
 output_prompt = """You are given a Python function and an assertion containing an input to the function. Complete the 
 assertion with a literal (no unsimplified expressions, no function calls) containing the output when executing the 
 provided code on the given input, even if the function is incorrect or incomplete. Provide the full assertion with 

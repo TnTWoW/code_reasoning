@@ -6,6 +6,7 @@ import os
 from tasks.arc import ARC
 from tasks.list_function import ListFunction
 from tasks.robust_fill import RobustFill
+from tasks.cruxeval import CruxEvalInput, CruxEvalOutput
 # from tasks.scan import SCAN
 from utils.io_utils import read_jsonl, write_json
 from utils.query_utils import CACHE_FILE, HISTORY_FILE
@@ -131,7 +132,8 @@ NAME_TO_TASK = {
     "list_function": ListFunction,
     "arc": ARC,
     "robust_fill": RobustFill,
-    # TODO "deepcoder": DeepCoder,
+    "cruxeval_input": CruxEvalInput,
+    "cruxeval_output": CruxEvalOutput,
     # "acre": ACRE,
     # "scan": SCAN,
 }
