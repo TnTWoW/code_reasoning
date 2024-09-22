@@ -1,7 +1,10 @@
+import copy
 import logging
 import re
 import numpy as np
 import ast
+from utils.python_utils import execute_function
+from tqdm import tqdm
 
 from prompts.cruxeval import (
     input_prompt,
@@ -69,15 +72,21 @@ class CruxEvalInput(CruxEval):
         self.rule_with_feedback_prompt = rule_with_feedback_input_prompt
 
     def extract_input_prediction(self, text):
-        pattern = r'f(\s*(.*?)\s*)'
+        pattern = r'f\((.*?)\)'
         results = re.findall(pattern, text)
         if not results:
             return ""
         return results[-1]
 
-    def get_metrics(self, answers: list) -> dict:
-        all_outputs = self.get_all_examples("input")
-        acc = np.mean([safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)])
+    def get_metrics(self, codes: list, pred_inputs: list, all_outputs: list) -> dict:
+        all_pred_outputs = []
+        for code, pred_input, outputs in\
+                tqdm(zip(codes, pred_inputs, all_outputs),
+                     desc="Evaluating results", total=len(codes)):
+            input = copy.deepcopy([pred_input])
+            pred_outputs = execute_function(code, input)
+            all_pred_outputs.append(pred_outputs[0])
+        acc = np.mean([a == safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)])
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
@@ -85,15 +94,28 @@ class CruxEvalInput(CruxEval):
         return output_dict
 
     def eval_test_from_rule(self, responses):
+        codes = self.get_all_examples("code")
+        outputs = self.get_all_examples("output")
         assert all([response is not None for response in responses])
         answers = [self.extract_input_prediction(response) for response in responses]
-        output_dict = self.get_metrics(answers)
+        output_dict = self.get_metrics(codes, answers, outputs)
         return output_dict
-    def get_feedback(self, code, output, rule, p_input, input):
-        if safe_literal_eval(p_input) != ast.literal_eval(input):
+    def get_feedback(self, code, output, rule, pred_input, input):
+        p_input = copy.deepcopy([pred_input])
+        pred_outputs = execute_function(code, p_input)[0]
+        if safe_literal_eval(output) != pred_outputs:
             return self.rule_with_feedback_prompt.format(code=code, output=output, rule=rule, p_input=p_input)
         return ""
 
+    def get_best_outputs(self, responses):
+        if self.n == 1:
+            responses = [self.extract_input_prediction(r) for r in responses]
+            return responses
+        responses = [
+            [str(self.extract_input_prediction(r)) for r in res] for res in responses
+        ]
+        best_outputs = [max(set(res), key=res.count) for res in responses]
+        return best_outputs
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_outputs = self.get_all_examples("output")
@@ -107,12 +129,13 @@ class CruxEvalInput(CruxEval):
                 prompt = self.cot_prompt.format(code=code, output=output)
             elif self.rule_type == 'coc':
                 prompt = self.coc_prompt.format(code=code, output=output)
+            else:
+                raise ValueError(f"Invalid rule type: {self.rule_type}")
             prompts.append(prompt)
             idxs.append(i)
         responses = self.query(prompts, idxs, histories=None)
         responses = self.get_best_outputs(responses)
-        responses = [self.extract_input_prediction(r) for r in responses]
-        metrics = self.get_metrics(responses)
+        metrics = self.get_metrics(all_codes, responses)
         self.metrics.append(metrics)
 
     def eval_rule(self):
@@ -154,11 +177,13 @@ class CruxEvalInput(CruxEval):
 
                 all_train_inputs = [self.extract_input_prediction(response) for response in responses]
                 all_inputs = self.get_all_examples("input", idxs)
+                all_codes = self.get_all_examples("code", idxs)
+                all_outputs = self.get_all_examples("output", idxs)
                 prompts = []
                 new_idxs = []
-                for idx, rule, code, output, train_inputs, inputs in zip(
-                        idxs, rules, all_codes, all_outputs, all_train_inputs, all_inputs
-                ):
+                for idx, rule, code, output, train_inputs, inputs in\
+                        tqdm(zip(idxs, rules, all_codes, all_outputs, all_train_inputs, all_inputs),
+                             desc="Generating feedback", total=len(idxs)):
                     prompt = self.get_feedback(code, output, rule, train_inputs, inputs)
                     if prompt == "":
                         continue
@@ -206,6 +231,16 @@ class CruxEvalOutput(CruxEval):
         if safe_literal_eval(p_output) != ast.literal_eval(output):
             return self.rule_with_feedback_prompt.format(code=code, input=input, rule=rule, p_output=p_output)
         return ""
+
+    def get_best_outputs(self, responses):
+        if self.n == 1:
+            responses = [self.extract_output_prediction(r) for r in responses]
+            return responses
+        responses = [
+            [str(self.extract_output_prediction(r)) for r in res] for res in responses
+        ]
+        best_outputs = [max(set(res), key=res.count) for res in responses]
+        return best_outputs
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_inputs = self.get_all_examples("input")
@@ -223,7 +258,6 @@ class CruxEvalOutput(CruxEval):
             idxs.append(i)
         responses = self.query(prompts, idxs, histories=None)
         responses = self.get_best_outputs(responses)
-        responses = [self.extract_output_prediction(r) for r in responses]
         metrics = self.get_metrics(responses)
         self.metrics.append(metrics)
 

@@ -61,19 +61,19 @@ def f(s):
 f('hi')
 ```
 [TRACE]
-state: {}
+state: {{}}
 line: f("hi")
 explanation: Python execution.
-delta state: {'s': 'hi'}
+delta state: {{'s': 'hi'}}
 line: s = s + s
 explanation: Python execution.
-delta state: {'s': 'hihi'}
+delta state: {{'s': 'hihi'}}
 line: result = "b" + s + "a"
 explanation: Python execution.
-delta state: {'result': 'bhihia'}
+delta state: {{'result': 'bhihia'}}
 line: return result
 explanation: Python execution.
-delta state: {}
+delta state: {{}}
 [/TRACE]
 Answer:
 ```python
