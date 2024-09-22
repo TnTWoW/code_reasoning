@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="A800-1" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="yzzhao@210.45.70.162:1741 password (2)" remoteFilesAllowedToDisappearOnAutoupload="false" showAutoUploadSettingsWarning="false">
     <serverData>
+      <paths name="A800-01">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/pythonCode/code_reasoning" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="A800-1">
         <serverdata>
           <mappings>
@@ -82,7 +89,7 @@
       <paths name="yzzhao@210.45.70.162:1741 password (2)">
         <serverdata>
           <mappings>
-            <mapping deploy="/data2/yzzhao/pythonCode/lm-inductive-reasoning" local="$PROJECT_DIR$" />
+            <mapping deploy="/data2/yzzhao/pythonCode/code_reasoning" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
