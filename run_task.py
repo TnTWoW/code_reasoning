@@ -134,6 +134,8 @@ NAME_TO_TASK = {
     "robust_fill": RobustFill,
     "cruxeval_input": CruxEvalInput,
     "cruxeval_output": CruxEvalOutput,
+    "livecodebench_input": CruxEvalInput,
+    "livecodebench_output": CruxEvalOutput,
     # "acre": ACRE,
     # "scan": SCAN,
 }
