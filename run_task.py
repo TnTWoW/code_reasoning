@@ -7,9 +7,9 @@ from tasks.arc import ARC
 from tasks.list_function import ListFunction
 from tasks.robust_fill import RobustFill
 # from tasks.scan import SCAN
-from utils.io_utils import read_jsonl, write_json, read_robustfill_json
+from utils.io_utils import read_jsonl, write_json
 from utils.query_utils import CACHE_FILE, HISTORY_FILE
-
+from utils.dsl import load_jsonl_dataset
 
 os.environ["http_proxy"] = "http://127.0.0.1:7890"
 os.environ["https_proxy"] = "http://127.0.0.1:7890"
@@ -173,7 +173,7 @@ def main():
     if args.history_file is None:
         args.history_file = os.path.join(dirname, HISTORY_FILE)
     if args.task_name == "robust_fill":
-        data = read_robustfill_json(args.data_file)
+        data = load_jsonl_dataset(args.data_file)
     else:
         data = read_jsonl(args.data_file)
     if args.n_examples is not None:
