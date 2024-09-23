@@ -75,48 +75,48 @@ class ListFunction(PythonTask):
         x = super().extract_prediction(x)
         return str_to_list(x)
 
-    # def struct_query(self, prompts, idxs, n=None, temperature=None, histories=None):
-    #     n = self.n if n is None else n
-    #     temperature = self.temperature if temperature is None else temperature
-    #     responses = query_batch_struct(
-    #         prompts,
-    #         self.model_name,
-    #         system_msg=self.system_msg,
-    #         cache_file=self.cache_file,
-    #         history_file=self.history_file,
-    #         histories=histories,
-    #         n=n,
-    #         temperature=temperature,
-    #     )
-    #     prompt2key = lambda p, h: (
-    #         p,
-    #         self.model_name,
-    #         self.system_msg,
-    #         tuple([tuple(e.items()) for e in h]) if h is not None else None,
-    #         temperature,
-    #         n,
-    #     )
-    #     assert len(idxs) == len(prompts) == len(responses)
-    #     for i, (idx, prompt, response) in enumerate(zip(idxs, prompts, responses)):
-    #         history = histories[i] if histories is not None else None
-    #         key = prompt2key(prompt, history)
-    #         if key not in self.cache:
-    #             self.cache[key] = response
-    #             cost = get_cost(
-    #                 prompt, response, model_name=self.model_name, history=history
-    #             )
-    #             self.cost += cost
-    #         self.interactions[idx].append(
-    #             {
-    #                 "query": prompt,
-    #                 "response": response,
-    #                 "history": copy.deepcopy(history),
-    #                 "n": n,
-    #                 "temperature": temperature,
-    #                 "system_msg": self.system_msg,
-    #             }
-    #         )
-    #     return responses
+    def struct_query(self, prompts, idxs, n=None, temperature=None, histories=None):
+        n = self.n if n is None else n
+        temperature = self.temperature if temperature is None else temperature
+        responses = query_batch_struct(
+            prompts,
+            self.model_name,
+            system_msg=self.system_msg,
+            cache_file=self.cache_file,
+            history_file=self.history_file,
+            histories=histories,
+            n=n,
+            temperature=temperature,
+        )
+        prompt2key = lambda p, h: (
+            p,
+            self.model_name,
+            self.system_msg,
+            tuple([tuple(e.items()) for e in h]) if h is not None else None,
+            temperature,
+            n,
+        )
+        assert len(idxs) == len(prompts) == len(responses)
+        for i, (idx, prompt, response) in enumerate(zip(idxs, prompts, responses)):
+            history = histories[i] if histories is not None else None
+            key = prompt2key(prompt, history)
+            if key not in self.cache:
+                self.cache[key] = response
+                cost = get_cost(
+                    prompt, response, model_name=self.model_name, history=history
+                )
+                self.cost += cost
+            self.interactions[idx].append(
+                {
+                    "query": prompt,
+                    "response": response,
+                    "history": copy.deepcopy(history),
+                    "n": n,
+                    "temperature": temperature,
+                    "system_msg": self.system_msg,
+                }
+            )
+        return responses
     # def get_rule(self, response):
     #     result = []
     #     json_response = eval(response)
@@ -125,14 +125,14 @@ class ListFunction(PythonTask):
     #         input_data = step['input']
     #         output_data = step['output']
     #         result.append(f"Step {i}: {subrule} Input: {input_data}, Output: {output_data}")
-    #
+    
     #     # Append the rule at the end
     #     result.append(f"Rule: {json_response['rule']}")
-    #
+    
     #     # Join the list into a single string
     #     final_output = '. '.join(result)
     #     return final_output
-    #
+    
     # def eval_rule(self):
     #     prompts = []
     #     all_train_examples = self.get_all_examples("train")
@@ -141,10 +141,10 @@ class ListFunction(PythonTask):
     #         prompts.append(self.rule_prompt.format(examples=train_examples))
     #     idxs = list(range(len(self.data)))
     #     idx_to_response = [None for _ in range(len(self.data))]
-    #
+    
     #     if self.mode == "generate":
     #         self.load_model()
-    #
+    
     #     for i in range(self.max_iter):
     #         logger.info(
     #             f"======= Iteration {i}: query {len(prompts)} examples =========="
@@ -165,14 +165,14 @@ class ListFunction(PythonTask):
     #             responses = self.get_best_responses(idxs, all_train_examples, responses)
     #         for idx, response in zip(idxs, responses):
     #             idx_to_response[idx] = response
-    #
+    
     #         rules = [self.get_rule(response) for response in responses]
     #         self.add_rules(idxs, rules)
-    #
+    
     #         if self.eval_every > 0 and i % self.eval_every == 0:
     #             metrics = self.eval_test_from_rule(idx_to_response)
     #             self.metrics.append(metrics)
-    #
+    
     #         if self.max_iter > 1:
     #             all_train_examples = self.get_all_examples("train", idxs)
     #             logger.info(
@@ -187,7 +187,7 @@ class ListFunction(PythonTask):
     #             )
     #             self.add_histories("user", idxs, prompts)
     #             self.add_histories("assistant", idxs, responses)
-    #
+    
     #             prompts = []
     #             new_idxs = []
     #             for idx, rule, train_examples, train_outputs in zip(
@@ -207,11 +207,11 @@ class ListFunction(PythonTask):
     #                 prompts.append(prompt)
     #                 new_idxs.append(idx)
     #             idxs = new_idxs
-    #
+    
     #             if len(prompts) == 0:
     #                 logger.info(f"No more feedback, break at iteration {i}")
     #                 break
-    #
+    
     #     if self.eval_every <= 0:
     #         metrics = self.eval_test_from_rule(idx_to_response)
     #         self.metrics.append(metrics)
