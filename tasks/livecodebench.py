@@ -3,7 +3,7 @@ import logging
 import re
 import numpy as np
 import ast
-from utils.python_utils import execute_function, extract_function_names
+from utils.python_utils import execute_function
 from tqdm import tqdm
 
 from prompts.livecodebench import (
@@ -24,6 +24,17 @@ from utils.query_utils import CLAUDE_MODELS
 
 logger = logging.getLogger(__name__)
 PRINT_NUM = 3
+
+def extract_function_names(function_string):
+    pattern = r'^\s*def\s+(\w+)\s*\(.*?\)\s*(?:->\s*\w+)?\s*:'
+    matches = re.findall(pattern, function_string, re.MULTILINE)
+    if matches:
+        return matches[0]
+    else:
+        pattern = r"def (\w+)\("
+        matches = re.findall(pattern, function_string)
+        return matches[0]
+    # return matches[0]
 def safe_literal_eval(value):
     try:
         return ast.literal_eval(value)
@@ -72,7 +83,7 @@ class LiveCodeBenchInput(LiveCodeBench):
         self.rule_with_feedback_prompt = rule_with_feedback_input_prompt
 
     def extract_input_prediction(self, text, func_name):
-        pattern = fr'{func_name}\((.*?)\)'
+        pattern = fr'assert\s+{func_name}\((.*?)\)'
         results = re.findall(pattern, text)
         if not results:
             return ""
@@ -96,7 +107,7 @@ class LiveCodeBenchInput(LiveCodeBench):
     def eval_test_from_rule(self, responses):
         codes = self.get_all_examples("code")
         outputs = self.get_all_examples("output")
-        func_names = [extract_function_names(code)[-1] for code in codes]
+        func_names = [extract_function_names(code) for code in codes]
         assert all([response is not None for response in responses])
         answers = [self.extract_input_prediction(response, func_name) for response, func_name in zip(responses, func_names)]
         output_dict = self.get_metrics(codes, answers, outputs)
@@ -105,12 +116,12 @@ class LiveCodeBenchInput(LiveCodeBench):
         p_input = copy.deepcopy([pred_input])
         pred_outputs = execute_function(code, p_input)[0]
         if safe_literal_eval(output) != pred_outputs:
-            func_name = extract_function_names(code)[-1]
+            func_name = extract_function_names(code)
             return self.rule_with_feedback_prompt.format(code=code, func_name=func_name, output=output, rule=rule, p_input=p_input)
         return ""
 
     def get_best_outputs(self, responses, codes):
-        func_names = [extract_function_names(code)[-1] for code in codes]
+        func_names = [extract_function_names(code) for code in codes]
         if self.n == 1:
             responses = [self.extract_input_prediction(r, fn) for r, fn in zip(responses, func_names)]
             return responses
@@ -126,7 +137,7 @@ class LiveCodeBenchInput(LiveCodeBench):
         prompts = []
         idxs = []
         for i, (code, output) in enumerate(zip(all_codes, all_outputs)):
-            func_name = extract_function_names(code)[-1]
+            func_name = extract_function_names(code)
             if self.rule_type == 'io':
                 prompt = self.io_prompt.format(code=code, func_name=func_name, output=output)
             elif self.rule_type == 'cot':
@@ -149,7 +160,7 @@ class LiveCodeBenchInput(LiveCodeBench):
         prompts = []
         idxs = []
         for i, (code, output) in enumerate(zip(all_codes, all_outputs)):
-            func_name = extract_function_names(code)[-1]
+            func_name = extract_function_names(code)
             prompt = self.rule_prompt.format(code=code, func_name=func_name, output=output)
             prompts.append(prompt)
             idxs.append(i)
@@ -184,7 +195,7 @@ class LiveCodeBenchInput(LiveCodeBench):
                 all_inputs = self.get_all_examples("input", idxs)
                 all_codes = self.get_all_examples("code", idxs)
                 all_outputs = self.get_all_examples("output", idxs)
-                all_func_names = [extract_function_names(code)[-1] for code in all_codes]
+                all_func_names = [extract_function_names(code) for code in all_codes]
                 all_train_inputs = [self.extract_input_prediction(response, func_name) for response, func_name in zip(responses, all_func_names)]
                 prompts = []
                 new_idxs = []
