@@ -1,9 +1,5 @@
-import copy
 import logging
-import re
-import numpy as np
-import ast
-from utils.python_utils import execute_function, extract_function_names
+from utils.python_utils import extract_function_names
 from tqdm import tqdm
 
 from prompts.livecodebench import (
