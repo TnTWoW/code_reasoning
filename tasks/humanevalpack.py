@@ -27,6 +27,7 @@ class HumanEvalPackInput(IOBase):
         self.coc_prompt = coc_input_prompt
         self.rule_prompt = rule_input_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_input_prompt
+        self.language = ""
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_outputs = self.get_all_examples("output")
@@ -121,6 +122,7 @@ class HumanEvalPackOutput(IOBase):
         self.coc_prompt = coc_output_prompt
         self.rule_prompt = rule_output_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_output_prompt
+        self.language = ""
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_inputs = self.get_all_examples("input")

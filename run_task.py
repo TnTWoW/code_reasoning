@@ -140,8 +140,6 @@ NAME_TO_TASK = {
     # "acre": ACRE,
     # "scan": SCAN,
 }
-
-
 class MessageFilter(logging.Filter):
     def filter(self, record):
         return (
@@ -149,7 +147,6 @@ class MessageFilter(logging.Filter):
             or "response_code=200" in record.getMessage()
             or "429 Too Many Requests" in record.getMessage()
         )
-
 
 def main():
     args = parse_args()

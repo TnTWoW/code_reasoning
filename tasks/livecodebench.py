@@ -1,6 +1,9 @@
 import logging
 from utils.python_utils import extract_function_names
 from tqdm import tqdm
+import copy
+import ast
+from utils.python_utils import execute_function
 
 from prompts.livecodebench import (
     input_prompt,
@@ -27,6 +30,15 @@ class LiveCodeBenchInput(IOBase):
         self.coc_prompt = coc_input_prompt
         self.rule_prompt = rule_input_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_input_prompt
+        self.language = "python"
+
+    def get_input_feedback(self, code, output, rule, pred_input, input):
+        p_input = copy.deepcopy([pred_input])
+        pred_outputs = execute_function(code, p_input)[0]
+        if self.safe_literal_eval(output) != pred_outputs:
+            func_name = extract_function_names(code)[0]
+            return self.rule_with_feedback_prompt.format(code=code, func_name=func_name, output=output, rule=rule, p_input=p_input, language=self.language)
+        return ""
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_outputs = self.get_all_examples("output")
@@ -36,11 +48,11 @@ class LiveCodeBenchInput(IOBase):
         for i, (code, output) in enumerate(zip(all_codes, all_outputs)):
             func_name = extract_function_names(code)[0]
             if self.rule_type == 'io':
-                prompt = self.io_prompt.format(code=code, func_name=func_name, output=output)
+                prompt = self.io_prompt.format(code=code, func_name=func_name, output=output, language=self.language)
             elif self.rule_type == 'cot':
-                prompt = self.cot_prompt.format(code=code, func_name=func_name, output=output)
+                prompt = self.cot_prompt.format(code=code, func_name=func_name, output=output, language=self.language)
             elif self.rule_type == 'coc':
-                prompt = self.coc_prompt.format(code=code, func_name=func_name, output=output)
+                prompt = self.coc_prompt.format(code=code, func_name=func_name, output=output, language=self.language)
             else:
                 raise ValueError(f"Invalid rule type: {self.rule_type}")
             prompts.append(prompt)
@@ -58,7 +70,7 @@ class LiveCodeBenchInput(IOBase):
         idxs = []
         for i, (code, output) in enumerate(zip(all_codes, all_outputs)):
             func_name = extract_function_names(code)[0]
-            prompt = self.rule_prompt.format(code=code, func_name=func_name, output=output)
+            prompt = self.rule_prompt.format(code=code, func_name=func_name, output=output, language=self.language)
             prompts.append(prompt)
             idxs.append(i)
         idx_to_response = [None for _ in range(len(self.data))]
@@ -121,6 +133,12 @@ class LiveCodeBenchOutput(IOBase):
         self.coc_prompt = coc_output_prompt
         self.rule_prompt = rule_output_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_output_prompt
+        self.language = "python"
+
+    def get_output_feedback(self, code, input, rule, p_output, output):
+        if self.safe_literal_eval(p_output) != ast.literal_eval(output):
+            return self.rule_with_feedback_prompt.format(code=code, input=input, rule=rule, p_output=p_output, language=self.language)
+        return ""
     def eval_io(self):
         all_codes = self.get_all_examples("code")
         all_inputs = self.get_all_examples("input")
@@ -129,15 +147,15 @@ class LiveCodeBenchOutput(IOBase):
         idxs = []
         for i, (code, input) in enumerate(zip(all_codes, all_inputs)):
             if self.rule_type == 'io':
-                prompt = self.io_prompt.format(code=code, input=input)
+                prompt = self.io_prompt.format(code=code, input=input, language=self.language)
             elif self.rule_type == 'cot':
-                prompt = self.cot_prompt.format(code=code, input=input)
+                prompt = self.cot_prompt.format(code=code, input=input, language=self.language)
             elif self.rule_type == 'coc':
-                prompt = self.coc_prompt.format(code=code, input=input)
+                prompt = self.coc_prompt.format(code=code, input=input, language=self.language)
             prompts.append(prompt)
             idxs.append(i)
         responses = self.query(prompts, idxs, histories=None)
-        responses = self.get_best_outputs(responses, )
+        responses = self.get_best_outputs(responses)
         metrics = self.get_output_metrics(responses)
         self.metrics.append(metrics)
 
@@ -148,7 +166,7 @@ class LiveCodeBenchOutput(IOBase):
         prompts = []
         idxs = []
         for i, (code, input) in enumerate(zip(all_codes, all_inputs)):
-            prompt = self.rule_prompt.format(code=code, input=input)
+            prompt = self.rule_prompt.format(code=code, input=input, language=self.language)
             prompts.append(prompt)
             idxs.append(i)
         idx_to_response = [None for _ in range(len(self.data))]

@@ -11,12 +11,6 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 PRINT_NUM = 3
 
-def safe_literal_eval(value):
-    try:
-        return ast.literal_eval(value)
-    except (ValueError, SyntaxError):
-        return value
-
 class IOBase(Task):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -26,6 +20,11 @@ class IOBase(Task):
         return data["input"][: self.n_train]
     def get_output_examples(self, data):
         return data["output"][: self.n_train]
+    def safe_literal_eval(self, value):
+        try:
+            return ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            return value
 
     def get_all_examples(self, split, idxs=None):
         if idxs is None:
@@ -57,19 +56,13 @@ class IOBase(Task):
             input = copy.deepcopy([pred_input])
             pred_outputs = execute_function(code, input)
             all_pred_outputs.append(pred_outputs[0])
-        acc = np.mean([a == safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)])
+        acc = np.mean([a == self.safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)])
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
         }
         return output_dict
-    def get_input_feedback(self, code, output, rule, pred_input, input):
-        p_input = copy.deepcopy([pred_input])
-        pred_outputs = execute_function(code, p_input)[0]
-        if safe_literal_eval(output) != pred_outputs:
-            func_name = extract_function_names(code)[0]
-            return self.rule_with_feedback_prompt.format(code=code, func_name=func_name, output=output, rule=rule, p_input=p_input)
-        return ""
+
     def extract_input_prediction(self, text, func_name):
         pattern = fr'assert\s+{func_name}\((.*?)\)'
         results = re.findall(pattern, text)
@@ -97,10 +90,6 @@ class IOBase(Task):
         output_dict = self.get_input_metrics(codes, answers, outputs)
         return output_dict
 
-    def get_output_feedback(self, code, input, rule, p_output, output):
-        if safe_literal_eval(p_output) != ast.literal_eval(output):
-            return self.rule_with_feedback_prompt.format(code=code, input=input, rule=rule, p_output=p_output)
-        return ""
     def extract_output_prediction(self, text):
         pattern = r'==\s*(.*?)\s*```'
         results = re.findall(pattern, text)
@@ -109,7 +98,7 @@ class IOBase(Task):
         return results[-1]
     def get_output_metrics(self, answers: list) -> dict:
         all_outputs = self.get_all_examples("output")
-        acc = np.mean([safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)])
+        acc = np.mean([self.safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)])
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
