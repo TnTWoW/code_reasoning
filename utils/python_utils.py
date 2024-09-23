@@ -85,10 +85,13 @@ def extract_program(response):
     return response
 
 
+# def extract_function_names(function_string):
+#     matches = re.findall(r"def (\w+)\(", function_string)
+#     return matches
 def extract_function_names(function_string):
-    matches = re.findall(r"def (\w+)\(", function_string)
+    pattern = r'\bdef\s+([a-zA-Z_]\w*)\s*\('
+    matches = re.findall(pattern, function_string, re.MULTILINE)
     return matches
-
 
 def execute_function(function_string, inputs, timeout=TIMEOUT, verbose=False):
     executor = PythonExecutor()
@@ -96,7 +99,7 @@ def execute_function(function_string, inputs, timeout=TIMEOUT, verbose=False):
     outputs = []
     function_names = extract_function_names(function_string)
     try:
-        fn_name = "fn" if "fn" in function_names else function_names[-1]
+        fn_name = "fn" if "fn" in function_names else function_names[0]
     except:
         return [None] * len(inputs)
 
