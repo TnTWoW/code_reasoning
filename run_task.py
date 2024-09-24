@@ -6,12 +6,14 @@ import os
 from tasks.arc import ARC
 from tasks.list_function import ListFunction
 from tasks.robust_fill import RobustFill
+from tasks.deepcoder import DeepCoder
 from tasks.cruxeval import CruxEvalInput, CruxEvalOutput
 from tasks.livecodebench import LiveCodeBenchInput, LiveCodeBenchOutput
 # from tasks.scan import SCAN
 from utils.io_utils import read_jsonl, write_json
 from utils.query_utils import CACHE_FILE, HISTORY_FILE
-from utils.dsl import load_jsonl_dataset
+from utils.dsl import load_robustfill_dataset
+from utils.deepcoder_dsl import load_deepcoder_dataset
 
 os.environ["http_proxy"] = "http://127.0.0.1:7890"
 os.environ["https_proxy"] = "http://127.0.0.1:7890"
@@ -133,6 +135,7 @@ NAME_TO_TASK = {
     "list_function": ListFunction,
     "arc": ARC,
     "robust_fill": RobustFill,
+    "deepcoder": DeepCoder,
     "cruxeval_input": CruxEvalInput,
     "cruxeval_output": CruxEvalOutput,
     "livecodebench_input": LiveCodeBenchInput,
@@ -163,7 +166,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     if args.output_file is not None:
-        assert not os.path.exists(args.output_file)
+        # assert not os.path.exists(args.output_file)
         dirname = os.path.dirname(args.output_file)
     else:
         dirname = os.getcwd()
@@ -172,7 +175,9 @@ def main():
     if args.history_file is None:
         args.history_file = os.path.join(dirname, HISTORY_FILE)
     if args.task_name == "robust_fill":
-        data = load_jsonl_dataset(args.data_file)
+        data = load_robustfill_dataset(args.data_file)
+    elif args.task_name == "deepcoder":
+        data = load_deepcoder_dataset(args.data_file)
     else:
         data = read_jsonl(args.data_file)
     if args.n_examples is not None:

@@ -772,7 +772,7 @@ def json_to_dataset_element(json_dict: dict[str, Any]) -> DatasetElement:
         python_program=python_program,
     )
 
-def load_jsonl_dataset(
+def load_robustfill_dataset(
     data_filename: str,
 ) -> list[tuple[DatasetElement, list[DatasetElement]]]:
   """Returns a list of tuples (test problem, few-shot examples for it)."""
