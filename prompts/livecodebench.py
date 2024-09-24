@@ -67,17 +67,17 @@ line: f("hi")
 explanation: {language} execution.
 delta state: {{'s': 'hi'}}
 line: s = s + s
-explanation: Python execution.
+explanation: {language} execution.
 delta state: {{'s': 'hihi'}}
 line: result = "b" + s + "a"
-explanation: Python execution.
+explanation: {language} execution.
 delta state: {{'result': 'bhihia'}}
 line: return result
-explanation: Python execution.
+explanation: {language} execution.
 delta state: {{}}
 [/TRACE]
 Answer:
-```{language
+```{language}
 assert f("hi") == "bhihia"
 ```
 
