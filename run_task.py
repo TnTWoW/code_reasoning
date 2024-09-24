@@ -166,7 +166,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     if args.output_file is not None:
-        # assert not os.path.exists(args.output_file)
+        assert not os.path.exists(args.output_file)
         dirname = os.path.dirname(args.output_file)
     else:
         dirname = os.getcwd()
