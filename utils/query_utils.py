@@ -123,6 +123,9 @@ async def query_openai(
     history_file=HISTORY_FILE,
     **kwargs,
 ):
+    #TODO: remove this
+    os.environ["http_proxy"] = "http://127.0.0.1:7890"
+    os.environ["https_proxy"] = "http://127.0.0.1:7890"
     # reference: https://github.com/ekinakyurek/mylmapis/blob/b0adb192135898fba9e9dc88f09a18dc64c1f1a9/src/network_manager.py
     messages = []
     if system_msg is not None:
