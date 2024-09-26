@@ -53,13 +53,16 @@ class IOBase(Task):
         for code, pred_input, outputs in\
                 tqdm(zip(codes, pred_inputs, all_outputs),
                      desc="Evaluating results", total=len(codes)):
+            # code = "from typing import List\nfrom collections import defaultdict\nfrom numpy import inf\nimport numpy\nimport pandas\n" + code
             input = copy.deepcopy([pred_input])
             pred_outputs = execute_function(code, input)
             all_pred_outputs.append(pred_outputs[0])
-        acc = np.mean([a == self.safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)])
+        accs = [a == self.safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)]
+        acc = np.mean(accs)
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
+            "test_accs": accs,
         }
         return output_dict
 
@@ -98,10 +101,12 @@ class IOBase(Task):
         return results[-1]
     def get_output_metrics(self, answers: list) -> dict:
         all_outputs = self.get_all_examples("output")
-        acc = np.mean([self.safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)])
+        accs = [self.safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)]
+        acc = np.mean(accs)
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
+            "test_accs": accs,
         }
         return output_dict
 
