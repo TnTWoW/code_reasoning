@@ -86,10 +86,12 @@ class CruxEvalInput(CruxEval):
             input = copy.deepcopy([pred_input])
             pred_outputs = execute_function(code, input)
             all_pred_outputs.append(pred_outputs[0])
-        acc = np.mean([a == safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)])
+        accs = [a == safe_literal_eval(o) for a, o in zip(all_pred_outputs, all_outputs)]
+        acc = np.mean(accs)
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
+            "test_accs": accs,
         }
         return output_dict
 
@@ -215,10 +217,12 @@ class CruxEvalOutput(CruxEval):
         return results[-1]
     def get_metrics(self, answers: list) -> dict:
         all_outputs = self.get_all_examples("output")
-        acc = np.mean([safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)])
+        accs = [safe_literal_eval(a) == ast.literal_eval(o) for a, o in zip(answers, all_outputs)]
+        acc = np.mean(accs)
         output_dict = {
             "test_instance_acc": acc,
             "test_acc": acc,
+            "test_accs": accs,
         }
         return output_dict
 
