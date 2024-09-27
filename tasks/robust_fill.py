@@ -15,6 +15,7 @@ from tasks.base import Task
 from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 from utils.query_utils import get_cost, query_batch_struct
+from utils.format_utils import unflatten
 
 import logging
 import types
@@ -78,7 +79,6 @@ class RobustFill(Task):
         idxs = list(range(len(all_test_examples)))
         logger.info(f"Applying rules to {len(all_test_examples)} test examples...")
         all_test_outputs = self.apply_all_rules(idxs, rules, all_test_examples)
-        all_test_examples = self.get_all_examples("test")
         output_dict = self.get_metrics("test", all_test_outputs)
         return output_dict
 
@@ -263,13 +263,32 @@ class RobustFill(Task):
             metrics = self.eval_test_from_rule(idx_to_response)
             self.metrics.append(metrics)
 
+    def eval_io(self):
+        all_train_examples = self.get_all_examples("train")
+        all_test_examples = self.get_all_examples("test")
+        prompts = []
+        idxs = []
+        for idx, (train_examples, test_examples) in enumerate(
+            zip(all_train_examples, all_test_examples)
+        ):
+            train_examples = self.format_examples(train_examples)
+            for test_example in test_examples:
+                test_input = self.format_input(test_example["input"])
+                prompts.append(
+                    self.io_prompt.format(
+                        examples=train_examples, test_input=test_input
+                    )
+                )
+                idxs.append(idx)
+        responses = self.query(prompts, idxs, histories=None)
+        responses = self.get_best_outputs(responses)
+        responses = [self.extract_prediction(r) for r in responses]
+        test_outputs = unflatten(responses, all_test_examples)
+        metrics = self.get_metrics("test", test_outputs)
+        self.metrics.append(metrics)
+
     def apply_all_rules(self, idxs, all_rules, all_examples, program_name: str = 'program'):
-        # if self.interpreter_type == "lm":
-        #     return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
-        # if self.rule_type != "python":
-        #     all_rules = self.rules_to_programs(idxs, all_rules)
-        #     programs = [extract_program(rule) for rule in all_rules]
-        # else:
+
         call_code = f'{program_name}(x)'
         namespace = get_namespace('robustfill')
 
@@ -279,8 +298,8 @@ class RobustFill(Task):
             program_code = extract_program(program)
             try:
                 exec(program_code, namespace)  # pylint: disable=exec-used
-            except:  # pylint: disable=bare-except
-                return None
+            except Exception as e:  # pylint: disable=bare-except
+                print(f"An error occurred:{e}")
             
             outputs = []
             for input in inputs:
@@ -296,7 +315,6 @@ class RobustFill(Task):
                 outputs.append(output)
 
             all_outputs.append(outputs)
-
         return all_outputs
     
 def get_namespace(dataset_type: str) -> dict[str, Any]:
@@ -337,3 +355,4 @@ def extract_program(response):
     if matches:
         return "\n".join(matches)
     return response
+

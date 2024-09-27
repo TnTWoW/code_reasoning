@@ -1,3 +1,9 @@
+import sys
+import re
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent.absolute()))
+
 from prompts.arc import (
     example_prompt,
     feedback_prompt,
@@ -16,17 +22,14 @@ from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 import utils.deepcoder_dsl as deepcoder_dsl 
 from utils.query_utils import get_cost, query_batch_struct
+from utils.format_utils import flatten, unflatten
+
 import numpy as np
 
 import logging
 import types
 import copy
 import collections
-import sys
-import re
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).parent.parent.absolute()))
 
 from typing import Any, Union
 import utils.dsl as robustfill_dsl
@@ -264,6 +267,76 @@ class DeepCoder(Task):
             metrics = self.eval_test_from_rule(idx_to_response)
             self.metrics.append(metrics)
 
+    def get_best_responses(self, all_idxs, all_examples, all_responses):
+        # all_idxs: [idx1, idx2]
+        # all_examples: [[ex1, ex2], [ex1, ex2]]
+        # responses [[rule1_for_examples1, rule2_for_examples1], [rule1_for_examples2, rule2_for_examples2]]
+        assert len(all_examples) == len(all_responses) == len(all_idxs)
+        # all_examples_flatten: [examples1, examples1, examples2, examples2]
+        all_examples_flatten, all_responses_flatten = flatten(
+            all_examples, all_responses
+        )
+        all_idxs_flatten, _ = flatten(all_idxs, all_responses)
+        all_rules_flatten = [
+            response for response in all_responses_flatten
+        ]
+        all_outputs_flatten = self.apply_all_rules(
+            all_idxs_flatten,
+            all_rules_flatten,
+            all_examples_flatten,
+        )
+        accs = [
+            self.eval_one(examples, outputs)[0]
+            for examples, outputs in zip(all_examples_flatten, all_outputs_flatten)
+        ]
+        accs = unflatten(accs, all_responses)
+        best_idx = [acc.index(max(acc)) for acc in accs]
+        best_responses = [
+            responses[idx] for idx, responses in zip(best_idx, all_responses)
+        ]
+        if self.verbose:
+            for best_idx, best_response, acc in zip(best_idx, best_responses, accs):
+                logger.info(f"Best rule: {best_response}, acc: {acc[best_idx]}")
+        return best_responses
+
+    def flatten(self, list1, list2):
+        """Flatten and match a list and a nested list.
+
+        Args:
+            list1: [ex1, ex2, ex3, ...]
+            list2: [[r1_ex1, r2_ex1], [r1_ex2, r2_ex2, ...], ...]
+
+        Returns:
+            flatten_list1: [ex1, ex1, ex2, ex2, ...]
+            flatten_list2: [r1_ex1, r2_ex1, r1_ex2, r2_ex2, ...]
+        """
+        assert len(list1) == len(list2)
+        flatten_list1 = []
+        flatten_list2 = []
+        for ex, nested_ex in zip(list1, list2):
+            for item in nested_ex:
+                flatten_list1.append(ex)
+                flatten_list2.append(item)
+        return flatten_list1, flatten_list2
+
+    def unflatten(self, flatten_list3, list2):
+        """Unflatten a flatten list to match a nested list.
+
+        Args:
+            flatten_list3: [r1_ex1, r2_ex1, r1_ex2, r2_ex2, ...]
+            list2: [[r1_ex1, r2_ex1], [r1_ex2, r2_ex2, ...], ...]
+
+        Returns:
+            nested_list3: [[r1_ex1, r2_ex1], [r1_ex2, r2_ex2, ...], ...]
+        """
+        list3 = []
+        index = 0
+        for inner_list in list2:
+            length = len(inner_list)
+            list3.append(flatten_list3[index : index + length])
+            index += length
+        return list3
+    
     def apply_all_rules(self, idxs, all_rules, all_examples, program_name: str = 'program'):
         # if self.interpreter_type == "lm":
         #     return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
@@ -281,8 +354,9 @@ class DeepCoder(Task):
             program_code = extract_program(dsl_program)
             try:
                 exec(program_code, namespace_copy)  # pylint: disable=exec-used
-            except:  # pylint: disable=bare-except
-                return None
+            except Exception as e:  # pylint: disable=bare-except
+                print(f"An error occurred:{e}")
+
             
             result = []
             for i in range(len(inputs['output'])):
@@ -325,19 +399,48 @@ class DeepCoder(Task):
 
         return "\n".join(example_strs)
 
+    def format_input(self, input):
+        return input['input']
+    
     def eval_one(self, examples, outputs):
         # examples: [ex1, ex2]
         # outputs: [output1, output2]
-        targets, preds= [], []
-        for i in range(len(examples['output'])):
-            targets.append(self.format_output(examples['output'][i]))
-            preds.append(self.format_output(outputs[i]))
+        try:
+            if type(outputs) == str:
+                outputs = eval(outputs)
+            outputs = [self.format_output(output) for output in outputs]
+        except:
+            return 0.0, [0.0 for _ in range(len(examples['output']))]
+        targets = [self.format_output(ex) for ex in examples['output']]
         accs = []
-        for pred, target in zip(preds, targets):
+        for pred, target in zip(outputs, targets):
             accs.append(float(pred == target))
         acc = np.mean(accs)
         return acc, accs
     
+    def eval_io(self):
+        all_train_examples = self.get_all_examples("train")
+        all_test_examples = self.get_all_examples("test")
+        prompts = []
+        idxs = []
+        for idx, (train_examples, test_examples) in enumerate(
+            zip(all_train_examples, all_test_examples)
+        ):
+            train_examples = self.format_examples(train_examples)
+            test_input = self.format_input(test_examples)
+            prompts.append(
+                self.io_prompt.format(
+                    examples=train_examples, test_input=test_input
+                )
+            )
+            idxs.append(idx)
+        responses = self.query(prompts, idxs, histories=None)
+        responses = self.get_best_outputs(responses)
+        responses = [self.extract_prediction(r) for r in responses]
+        # test_outputs = unflatten(responses, all_test_examples)
+        metrics = self.get_metrics("test", responses)
+        self.metrics.append(metrics)
+
 def get_namespace(dataset_type: str) -> dict[str, Any]:
   """Gets a namespace with the dsl loaded."""
   dsl_object = types.SimpleNamespace()
