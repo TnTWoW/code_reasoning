@@ -59,12 +59,12 @@ def get_prompt_prefix(dataset_element: DatasetElement) -> str:
 
 def get_test_prompt(dataset_element: DatasetElement) -> str:
 	"""Gets a prefix of the prompt describing one dataset element."""
-	s = 'Below are some example help you understand the `dsl` module. Now your task is to generate the dsl program that maps the following inputs to their corresponding outputs. [BEGIN PROBLEM]\n'
+	s = 'Below are some example help you understand the `dsl` module. Now your task is to generate the dsl program that maps the following inputs to their corresponding outputs First, analysis the program step by step, then write the corresponding code  [BEGIN PROBLEM]\n'
 	s += 'Input-output test cases:\n'
 	for i in range(get_num_examples(dataset_element.inputs)):
 		s += f'	Case {i + 1}. '
 		s += f'"{dataset_element.inputs[i]}" --> "{dataset_element.outputs[i]}"\n'
-	s += '\nProgram:\n```python\n# Your code here'
+	s += '\nAnalysis: <Your analysis>\nProgram:\n```python\n# Your code here'
 	return s
 
 def get_prompt_suffix(dataset_element: DatasetElement) -> str:
