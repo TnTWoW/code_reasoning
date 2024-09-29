@@ -69,7 +69,7 @@ def unflatten(flatten_list3, list2):
 
 
 def extract_response(prefixes, response):
-    patterns = [f"{prefix}: (.*)" for prefix in prefixes]
+    patterns = [f"{prefix}:(.*)" for prefix in prefixes]
     for pattern in patterns:
         matches = re.findall(pattern, response, re.DOTALL)
         if matches:

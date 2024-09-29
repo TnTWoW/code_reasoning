@@ -15,7 +15,7 @@ import tiktoken
 from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 
-ANTHROPIC_CLIENT = anthropic.AsyncAnthropic()
+ANTHROPIC_CLIENT = anthropic.AsyncAnthropic(base_url="https://aihubmix.com")
 
 HISTORY_FILE = "history.jsonl"
 CACHE_FILE = "query_cache.pkl"
@@ -34,12 +34,13 @@ MODEL2BATCH_SIZE = {
     "gpt-3.5-turbo-0613": 500,
     "gpt-4-0613": 500,
     "claude-2": 100,
+    "claude-3-5-sonnet-20240620": 100,
     "llama3": 500,
     "gpt-4o": 500,
     "gpt-4o-2024-08-06": 500,
 }
 
-GPT_MODELS = {"gpt-3.5-turbo-0613", "gpt-4-0613", "gpt-4o", "gpt-4o-2024-08-06"}
+GPT_MODELS = {"gpt-3.5-turbo-0613", "gpt-4-0613", "gpt-4o", "gpt-4o-2024-08-06", "claude-3-5-sonnet-20240620"}
 CLAUDE_MODELS = {"claude-2"}
 LLAMA_MODELS = {"Llama-3-70B-Instruct, Llama-3-8B-Instruct, Llama-3-8B, Llama-3-70B"}
 class Step(BaseModel):
@@ -75,7 +76,7 @@ async def query_openai_struct(
         kwargs["max_tokens"] = max_tokens
     kwargs["temperature"] = temperature
     kwargs["n"] = n
-    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="https://aihubmix.com/v1")
     # response = await aclient.chat.completions.create(model=model_name, messages=messages, **kwargs)
     for i in range(retry + 1):
         wait_time = (1 << min(i, EXP_CAP)) + random() / 10
@@ -137,7 +138,7 @@ async def query_openai(
         kwargs["max_tokens"] = max_tokens
     kwargs["temperature"] = temperature
     kwargs["n"] = n
-    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="https://aihubmix.com/v1")
     # response = await aclient.chat.completions.create(model=model_name, messages=messages, **kwargs)
     for i in range(retry + 1):
         wait_time = (1 << min(i, EXP_CAP)) + random() / 10

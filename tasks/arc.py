@@ -119,7 +119,7 @@ class ARC(PythonTask):
     #     except:
     #         return "\n" + str(grid)
 
-    def get_rule(self, response):
+    def get_struct_rule(self, response):
         result = []
         json_response = eval(response)
         for i, step in enumerate(json_response['steps'], start=1):
@@ -156,7 +156,8 @@ class ARC(PythonTask):
             if self.mode == "generate":
                 responses = self.generate(prompts, idxs, histories=histories)
             else:
-                responses = self.struct_query(prompts, idxs, histories=histories)
+                # responses = self.struct_query(prompts, idxs, histories=histories)
+                responses = self.query(prompts, idxs, histories=histories)
             if self.n > 1:
                 all_train_examples = self.get_all_examples("train", idxs)
                 logger.info(f"Reranking {len(all_train_examples)} train examples...")
@@ -169,6 +170,7 @@ class ARC(PythonTask):
                 idx_to_response[idx] = response
 
             rules = [self.get_rule(response) for response in responses]
+            # rules = [self.get_rule(response) for response in responses]
             self.add_rules(idxs, rules)
 
             if self.eval_every > 0 and i % self.eval_every == 0:
