@@ -75,7 +75,7 @@ async def query_openai_struct(
         kwargs["max_tokens"] = max_tokens
     kwargs["temperature"] = temperature
     kwargs["n"] = n
-    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="https://aihubmix.com/v1")
     # response = await aclient.chat.completions.create(model=model_name, messages=messages, **kwargs)
     for i in range(retry + 1):
         wait_time = (1 << min(i, EXP_CAP)) + random() / 10
@@ -137,7 +137,7 @@ async def query_openai(
         kwargs["max_tokens"] = max_tokens
     kwargs["temperature"] = temperature
     kwargs["n"] = n
-    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="https://aihubmix.com/v1")
     # response = await aclient.chat.completions.create(model=model_name, messages=messages, **kwargs)
     for i in range(retry + 1):
         wait_time = (1 << min(i, EXP_CAP)) + random() / 10

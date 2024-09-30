@@ -15,7 +15,7 @@ from tasks.base import Task
 from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 from utils.query_utils import get_cost, query_batch_struct
-from utils.format_utils import unflatten
+from utils.format_utils import flatten, unflatten
 
 import logging
 import types
@@ -165,6 +165,38 @@ class RobustFill(Task):
         for input, output in zip(data[2].inputs, data[2].outputs):
             test_examples.append({"input": input, "output": output})
         return test_examples
+    
+    def get_best_responses(self, all_idxs, all_examples, all_responses):
+        # all_idxs: [idx1, idx2]
+        # all_examples: [[ex1, ex2], [ex1, ex2]]
+        # responses [[rule1_for_examples1, rule2_for_examples1], [rule1_for_examples2, rule2_for_examples2]]
+        assert len(all_examples) == len(all_responses) == len(all_idxs)
+        # all_examples_flatten: [examples1, examples1, examples2, examples2]
+        all_examples_flatten, all_responses_flatten = flatten(
+            all_examples, all_responses
+        )
+        all_idxs_flatten, _ = flatten(all_idxs, all_responses)
+        all_rules_flatten = [
+            response for response in all_responses_flatten
+        ]
+        all_outputs_flatten = self.apply_all_rules(
+            all_idxs_flatten,
+            all_rules_flatten,
+            all_examples_flatten,
+        )
+        accs = [
+            self.eval_one(examples, outputs)[0]
+            for examples, outputs in zip(all_examples_flatten, all_outputs_flatten)
+        ]
+        accs = unflatten(accs, all_responses)
+        best_idx = [acc.index(max(acc)) for acc in accs]
+        best_responses = [
+            responses[idx] for idx, responses in zip(best_idx, all_responses)
+        ]
+        if self.verbose:
+            for best_idx, best_response, acc in zip(best_idx, best_responses, accs):
+                logger.info(f"Best rule: {best_response}, acc: {acc[best_idx]}")
+        return best_responses
     
     def get_all_examples(self, split, idxs=None):
         if idxs is None:
