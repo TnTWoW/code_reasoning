@@ -53,7 +53,7 @@ class IOBase(Task):
         for code, pred_input, outputs in\
                 tqdm(zip(codes, pred_inputs, all_outputs),
                      desc="Evaluating results", total=len(codes)):
-            # code = "from typing import List\nfrom collections import defaultdict\nfrom numpy import inf\nimport numpy\nimport pandas\n" + code
+            code = "from typing import List\nfrom collections import defaultdict\nfrom numpy import inf\nimport numpy\nimport pandas\n" + code
             input = copy.deepcopy([pred_input])
             pred_outputs = execute_function(code, input)
             all_pred_outputs.append(pred_outputs[0])

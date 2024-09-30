@@ -34,7 +34,7 @@ class LiveCodeBenchInput(IOBase):
 
     def get_input_feedback(self, code, output, rule, pred_input, input):
         p_input = copy.deepcopy([pred_input])
-        # code = "from typing import List\nfrom collections import defaultdict\nfrom numpy import inf\nimport numpy\nimport pandas\n" + code
+        code = "from typing import List\nfrom collections import defaultdict\nfrom numpy import inf\nimport numpy\nimport pandas\n" + code
         pred_outputs = execute_function(code, p_input)[0]
         if self.safe_literal_eval(output) != pred_outputs:
             func_name = extract_function_names(code)[0]
