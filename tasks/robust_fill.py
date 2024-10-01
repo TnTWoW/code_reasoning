@@ -1,17 +1,12 @@
-from prompts.arc import (
-    example_prompt,
-    feedback_prompt,
-    io_prompt,
-    io_prompt_with_format,
-    python_rule_prompt,
-    rule_prompt,
-    rule_to_output_prompt,
-    rule_to_output_prompt_with_format,
-    rule_to_python_prompt,
-    rule_with_feedback_prompt,
-)
-from prompts.robustfill import few_shot_prompt
-from tasks.base import Task
+from prompts.robustfill import (rule_prompt,
+                                rule_to_python_prompt,
+                                sub_rule_prompt,
+                                feedback_prompt,
+                                rule_with_feedback_prompt,
+                                example_prompt,
+                                few_shot_prompt)
+from prompts.arc import io_prompt
+from tasks.base import PythonTask
 from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 from utils.query_utils import get_cost, query_batch_struct
@@ -24,6 +19,7 @@ import collections
 import sys
 import re
 from pathlib import Path
+import signal
 
 sys.path.append(str(Path(__file__).parent.parent.absolute()))
 
@@ -53,24 +49,19 @@ PRINT_NUM = 3
 CACHE_FILE = "query_cache.pkl"
 HISTORY_FILE = "history.jsonl"
 
-class RobustFill(Task):
+
+def handler(signum, frame):
+    raise Exception("Time out error")
+class RobustFill(PythonTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if self.model_name in CLAUDE_MODELS:
-            self.io_prompt = io_prompt_with_format
-            self.rule_to_output_prompt = rule_to_output_prompt_with_format
-        else:
-            self.io_prompt = io_prompt
-            self.rule_to_output_prompt = rule_to_output_prompt
-
-        if self.rule_type == "python":
-            self.rule_prompt = python_rule_prompt
-        else:
-            self.rule_prompt = rule_prompt
-        self.example_prompt = example_prompt
-        self.rule_with_feedback_prompt = rule_with_feedback_prompt
+        self.rule_prompt = rule_prompt
+        self.sub_rule_prompt = sub_rule_prompt
+        self.few_shot_examples = self.data[0][1]
         self.feedback_prompt = feedback_prompt
-        self.rule_to_python_prompt = rule_to_python_prompt
+        self.rule_with_feedback_prompt = rule_with_feedback_prompt
+        self.example_prompt = example_prompt
+        self.io_prompt = io_prompt
 
     def eval_test_from_rule(self, responses):
         assert all([response is not None for response in responses])
@@ -82,7 +73,16 @@ class RobustFill(Task):
         output_dict = self.get_metrics("test", all_test_outputs)
         return output_dict
 
-    def get_rule(self, response):
+    def rules_to_programs(self, idxs, all_rules, all_examples):
+        # prompts = [self.rule_to_python_prompt.format(rule=rule) for rule in all_rules]
+
+        prompts = [rule_to_python_prompt(self.few_shot_examples, rule) for rule in all_rules]
+        if self.mode == "generate":
+            responses = self.generate(prompts, idxs, histories=None)
+        else:
+            responses = self.query(prompts, idxs, n=1, temperature=0, histories=None)
+        return responses
+    def get_struct_rule(self, response):
         result = []
         json_response = eval(response)
         for i, step in enumerate(json_response['steps'], start=1):
@@ -181,7 +181,9 @@ class RobustFill(Task):
         num_train = len(self.data)
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
-            prompts.append(few_shot_prompt(few_shot_examples, train_set))
+            # prompts.append(rule_prompt(train_set))
+            prompts.append(few_shot_prompt(few_shot_examples[:2], train_set))
+
 
         idxs = list(range(len(self.data)))
         idx_to_response = [None for _ in range(len(self.data))]
@@ -289,28 +291,36 @@ class RobustFill(Task):
 
     def apply_all_rules(self, idxs, all_rules, all_examples, program_name: str = 'program'):
 
+        if self.interpreter_type == "lm":
+            return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
+        if self.rule_type != "python":
+            all_rules = self.rules_to_programs(idxs, all_rules, all_examples)
+        programs = [extract_program(rule) for rule in all_rules]
+
         call_code = f'{program_name}(x)'
         namespace = get_namespace('robustfill')
 
         all_outputs = []
-
-        for program, inputs in zip(all_rules, all_examples):
-            program_code = extract_program(program)
+        signal.signal(signal.SIGALRM, handler)
+        for program, inputs in zip(programs, all_examples):
+            signal.alarm(3)
             try:
-                exec(program_code, namespace)  # pylint: disable=exec-used
+                exec(program, namespace)  # pylint: disable=exec-used
             except Exception as e:  # pylint: disable=bare-except
                 print(f"An error occurred:{e}")
-            
+            signal.alarm(0)
             outputs = []
             for input in inputs:
                 namespace_copy = namespace.copy()
                 # Assign the argument values.
                 namespace_copy['x'] = input['input']
                 # Call the solution function.
+                signal.alarm(3)
                 try:
                     output = eval(call_code, namespace_copy)  # pylint: disable=eval-used
                 except:  # pylint: disable=bare-except
                     output = None
+                signal.alarm(0)
                 
                 outputs.append(output)
 

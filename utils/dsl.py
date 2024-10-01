@@ -758,7 +758,10 @@ def build_token_tables():
 ROBUSTFILL_ID_TOKEN_TABLE, _ = build_token_tables()
 def json_to_dataset_element(json_dict: dict[str, Any]) -> DatasetElement:
     """Converts a json dict to a DatasetElement."""
-    dsl_program = json_dict['program']
+    if 'program' not in json_dict:
+      dsl_program = ''
+    else:
+      dsl_program = json_dict['program']
     program_tokens = [int(t) for t in dsl_program.replace('|', ' ').split()]
     program_tokens.append(ROBUSTFILL_EOS_ID)
     program_object = decode_program(
