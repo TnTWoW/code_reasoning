@@ -15,14 +15,17 @@ from prompts.arc import (
     rule_to_output_prompt_with_format,
     rule_to_python_prompt,
     rule_with_feedback_prompt,
+    rule_to_python_prompt,
 )
-from prompts.deepcoder import few_shot_prompt
+from prompts.deepcoder import few_shot_prompt, fewshot_coc_prompt, few_shot_rule_prompt
 from tasks.base import Task
 from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 import utils.deepcoder_dsl as deepcoder_dsl 
 from utils.query_utils import get_cost, query_batch_struct
 from utils.format_utils import flatten, unflatten
+
+import tqdm
 
 import numpy as np
 
@@ -185,7 +188,10 @@ class DeepCoder(Task):
         num_train = len(self.data)
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
-            prompts.append(few_shot_prompt(few_shot_examples, train_set, 'deepcoder'))
+            # prompts.append(few_shot_prompt(few_shot_examples, train_set, 'deepcoder'))
+            prompts.append(few_shot_rule_prompt(few_shot_examples, train_set, 'deepcoder'))
+            # prompts.append(fewshot_coc_prompt(train_set))
+
 
         idxs = list(range(len(self.data)))
         idx_to_response = [None for _ in range(len(self.data))]
@@ -372,6 +378,35 @@ class DeepCoder(Task):
             all_outputs.append(result)
 
         return all_outputs
+
+    def apply_all_rules(self, idxs, all_rules, all_examples):
+        if self.interpreter_type == "lm":
+            return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
+        if self.rule_type != "python":
+            all_rules = self.rules_to_programs(idxs, all_rules)
+            programs = [extract_program(rule) for rule in all_rules]
+        else:
+            programs = all_rules
+        all_outputs = []
+
+        total = len(all_examples)
+        for examples, program in tqdm(
+            zip(all_examples, programs), desc="Applying rules", total=total
+        ):
+            inputs = copy.deepcopy(
+                [self.get_python_input(ex["input"]) for ex in examples]
+            )
+            outputs = execute_function(program, inputs)
+            all_outputs.append(outputs)
+        return all_outputs
+    
+    def rules_to_programs(self, idxs, all_rules):
+        prompts = [self.rule_to_python_prompt.format(rule=rule) for rule in all_rules]
+        if self.mode == "generate":
+            responses = self.generate(prompts, idxs, histories=None)
+        else:
+            responses = self.query(prompts, idxs, n=1, temperature=0, histories=None)
+        return responses
 
     def get_feedback(self, examples, outputs):
         feedbacks, inputs, targets = [], examples['input'], examples['output']
