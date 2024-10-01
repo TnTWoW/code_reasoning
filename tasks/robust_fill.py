@@ -7,15 +7,15 @@ from prompts.arc import (
     rule_prompt,
     rule_to_output_prompt,
     rule_to_output_prompt_with_format,
-    rule_to_python_prompt,
     rule_with_feedback_prompt,
+    coc_prompt,
 )
-from prompts.robustfill import few_shot_prompt
+from prompts.robustfill import few_shot_prompt, fewshot_coc_prompt, few_shot_rule_prompt, rule_to_python_prompt
 from tasks.base import Task
 from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 from utils.query_utils import get_cost, query_batch_struct
-from utils.format_utils import unflatten
+from utils.format_utils import flatten, unflatten
 
 import logging
 import types
@@ -45,7 +45,6 @@ ROBUSTFILL_FUNCTIONS = [
 		'Remove', 'RemoveAll',
 ]
 
-
 logger = logging.getLogger(__name__)
 
 PRINT_NUM = 3
@@ -68,6 +67,7 @@ class RobustFill(Task):
         else:
             self.rule_prompt = rule_prompt
         self.example_prompt = example_prompt
+        self.coc_prompt = coc_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_prompt
         self.feedback_prompt = feedback_prompt
         self.rule_to_python_prompt = rule_to_python_prompt
@@ -78,7 +78,7 @@ class RobustFill(Task):
         all_test_examples = self.get_all_examples("test")
         idxs = list(range(len(all_test_examples)))
         logger.info(f"Applying rules to {len(all_test_examples)} test examples...")
-        all_test_outputs = self.apply_all_rules(idxs, rules, all_test_examples)
+        all_test_outputs = self.rule_apply_all_rules(idxs, rules, all_test_examples)
         output_dict = self.get_metrics("test", all_test_outputs)
         return output_dict
 
@@ -166,6 +166,38 @@ class RobustFill(Task):
             test_examples.append({"input": input, "output": output})
         return test_examples
     
+    def get_best_responses(self, all_idxs, all_examples, all_responses):
+        # all_idxs: [idx1, idx2]
+        # all_examples: [[ex1, ex2], [ex1, ex2]]
+        # responses [[rule1_for_examples1, rule2_for_examples1], [rule1_for_examples2, rule2_for_examples2]]
+        assert len(all_examples) == len(all_responses) == len(all_idxs)
+        # all_examples_flatten: [examples1, examples1, examples2, examples2]
+        all_examples_flatten, all_responses_flatten = flatten(
+            all_examples, all_responses
+        )
+        all_idxs_flatten, _ = flatten(all_idxs, all_responses)
+        all_rules_flatten = [
+            response for response in all_responses_flatten
+        ]
+        all_outputs_flatten = self.apply_all_rules(
+            all_idxs_flatten,
+            all_rules_flatten,
+            all_examples_flatten,
+        )
+        accs = [
+            self.eval_one(examples, outputs)[0]
+            for examples, outputs in zip(all_examples_flatten, all_outputs_flatten)
+        ]
+        accs = unflatten(accs, all_responses)
+        best_idx = [acc.index(max(acc)) for acc in accs]
+        best_responses = [
+            responses[idx] for idx, responses in zip(best_idx, all_responses)
+        ]
+        if self.verbose:
+            for best_idx, best_response, acc in zip(best_idx, best_responses, accs):
+                logger.info(f"Best rule: {best_response}, acc: {acc[best_idx]}")
+        return best_responses
+    
     def get_all_examples(self, split, idxs=None):
         if idxs is None:
             idxs = list(range(len(self.data)))
@@ -176,12 +208,21 @@ class RobustFill(Task):
         else:
             raise ValueError(f"Invalid split: {split}")
 
+    def rules_to_programs(self, idxs, all_rules):
+        prompts = [self.rule_to_python_prompt+rule for rule in all_rules]
+        if self.mode == "generate":
+            responses = self.generate(prompts, idxs, histories=None)
+        else:
+            responses = self.query(prompts, idxs, n=1, temperature=0, histories=None)
+        return responses
+    
     def eval_rule(self):
         prompts = []
         num_train = len(self.data)
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
-            prompts.append(few_shot_prompt(few_shot_examples, train_set))
+            # prompts.append(fewshot_coc_prompt(train_set))
+            prompts.append(few_shot_rule_prompt(train_set))
 
         idxs = list(range(len(self.data)))
         idx_to_response = [None for _ in range(len(self.data))]
@@ -198,8 +239,8 @@ class RobustFill(Task):
             if self.mode == "generate":
                 responses = self.generate(prompts, idxs, histories=histories)
             else:
-                # responses = self.struct_query(prompts, idxs, histories=histories)
-                responses = self.query(prompts, idxs, histories=histories)
+                responses = self.struct_query(prompts, idxs, histories=histories)
+                # responses = self.query(prompts, idxs, histories=histories)
             if self.n > 1:
                 all_train_examples = self.get_all_examples("train", idxs)
                 logger.info(f"Reranking {len(all_train_examples)} train examples...")
@@ -211,8 +252,8 @@ class RobustFill(Task):
             for idx, response in zip(idxs, responses):
                 idx_to_response[idx] = response
 
-            # rules = [self.get_rule(response) for response in responses]
-            rules = [response for response in responses]
+            rules = [self.get_rule(response) for response in responses]
+            # rules = [response for response in responses]
             
             self.add_rules(idxs, rules)
 
@@ -295,6 +336,46 @@ class RobustFill(Task):
         all_outputs = []
 
         for program, inputs in zip(all_rules, all_examples):
+            program_code = extract_program(program)
+            try:
+                exec(program_code, namespace)  # pylint: disable=exec-used
+            except Exception as e:  # pylint: disable=bare-except
+                print(f"An error occurred:{e}")
+            
+            outputs = []
+            for input in inputs:
+                namespace_copy = namespace.copy()
+                # Assign the argument values.
+                namespace_copy['x'] = input['input']
+                # Call the solution function.
+                try:
+                    output = eval(call_code, namespace_copy)  # pylint: disable=eval-used
+                except:  # pylint: disable=bare-except
+                    output = None
+                
+                outputs.append(output)
+
+            all_outputs.append(outputs)
+        return all_outputs
+
+
+
+    def rule_apply_all_rules(self, idxs, all_rules, all_examples):
+        if self.interpreter_type == "lm":
+            return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
+        if self.rule_type != "python":
+            all_rules = self.rules_to_programs(idxs, all_rules)
+            programs = [extract_program(rule) for rule in all_rules]
+        else:
+            programs = all_rules
+        all_outputs = []
+
+        call_code = 'program(x)'
+        namespace = get_namespace('deepcoder')
+
+        all_outputs = []
+
+        for program, inputs in zip(programs, all_examples):
             program_code = extract_program(program)
             try:
                 exec(program_code, namespace)  # pylint: disable=exec-used
