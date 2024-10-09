@@ -1,9 +1,6 @@
-# LLM Inductive Reasoning 
+# Code Reasoning through Hypothesis Decomposition and Amendment
 
-This repository contains code for the paper ["Phenomenal Yet Puzzling: Testing Inductive Reasoning Capabilities of Language Models with Hypothesis Refinement"](https://arxiv.org/abs/2310.08559)
-(Linlu Qiu, Liwei Jiang, Ximing Lu, Melanie Sclar, Valentina Pyatkin, Chandra Bhagavatula, Bailin Wang, Yoon Kim, Yejin Choi, Nouha Dziri, Xiang Ren)
-
-![figs/teaser.png](figs/teaser.png)
+This repository contains code for the paper "Unveiling the Magic of Code Reasoning through Hypothesis Decomposition and Amendment"
 
 ## Setup
 
@@ -18,7 +15,7 @@ pip install -r requirements.txt
 - `data`: Data used in our paper.
 - `prompts`: Prompt templates for each task.
 - `tasks`: Task-specific code.
-- `outputs`: Outputs and model interactions for each task. The naming convention follows `{model}_{dataset}_{method}_iter{max_iter}_t{temperature}_n{n}_{rule_type}_{interpreter_type}.json` (see below). The default setting is used if a value is not specified.
+- `results`: Outputs and model interactions for each task. The naming convention follows `{model}_{dataset}_{method}_iter{max_iter}_t{temperature}_n{n}_{rule_type}_{interpreter_type}.json` (see below). The default setting is used if a value is not specified.
 - `scripts`: Useful scripts.
 
 ## Run Experiments
@@ -95,29 +92,3 @@ python eval_task.py --data_file ${dta_file} \
     --input_file ${input_file} \
     --output_file ${output_file}
 ```
-
-## How to Add a New Task
-To setup your own task:
-1. Convert your data into a JSONL file, with each line representing one example. Each example should follow:
-```json
-{
-    "train": [
-        {"input": "input_1", "output": "output_1"},
-        {"input": "input_2", "output": "output_2"},
-    ],
-    "test": [
-        {"input": "input_3", "output": "output_3"},
-        {"input": "input_4", "output": "output_4"},
-    ]
-}
-```
-2. Add your prompt templates into `prompts/${task_name}.py`. You need to define the following prompt templates:
-```python
-io_prompt = ""
-example_prompt = ""
-rule_prompt = ""
-feedback_prompt = ""
-rule_with_feedback_prompt = ""
-rule_to_output_prompt = ""
-```
-3. Add your task to `tasks/${task_name}.py` by inheriting from `Task` in `tasks/base.py`. At a minimum, you need to implement the `apply_all_rules` function. If you use an LM interpreter, this function can simply be `apply_all_rules_with_lm`. If you use a Python interpreter, you can inherit directly from `PythonTask` in `tasks/base.py`.

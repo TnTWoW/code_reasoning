@@ -121,7 +121,7 @@ delta state: {{'Input': "x1": [1, 4, 9], 'Output': 'x2': 3]}, {Input: "x1": [10,
 
 """
 
-rule_prompt = """Generate a rule that maps the below inputs to their corresponding outputs.
+rule_prompt = """Please generate a rule that can describe the above inputs formats and map them to their corresponding outputs.
 
 Please format your rule as follows:
 
@@ -134,25 +134,21 @@ The `dsl` module is a custom library for manipulating lists of integers. It cont
 \nAdditionally, the module defines the following constants:
 \nPLUS_ONE, MINUS_ONE, TIMES_TWO, DIV_TWO, NEGATE, SQUARE, TIMES_THREE, DIV_THREE, TIMES_FOUR, DIV_FOUR, IS_POSITIVE, IS_NEGATIVE, IS_EVEN, IS_ODD, ADD, SUBTRACT, MULTIPLY, MIN, MAX
 \nBelow are example programming problems using the `dsl` module, with input-output test cases illustrating their behavior.
-\nImportant: All programs begin with ```python and end with ``` alone.
 
-
-[BEGIN PROBLEM]\nInput-output test cases:
-  Case 1. x0 = 4, x1 = [4, 8, 3] --> [3, 4, 8]
-  Case 2. x0 = 1, x1 = [10, -2, -1, 7, 4] --> [-2, -1, 4, 7, 10]
-  Case 3. x0 = 0, x1 = [-10] --> [-10]
+Input-output test cases:
+  Case 1. Input: x0 = 4, x1 = [4, 8, 3] Output: [3, 4, 8]
+  Case 2. Input: x0 = 1, x1 = [10, -2, -1, 7, 4] Output: [-2, -1, 4, 7, 10]
+  Case 3. Input: x0 = 0, x1 = [-10] Output: [-10]
 \nProgram:
 ```python\ndef program(x0, x1):
   x2 = dsl.Sort(x1)
   return x2
 ```
-[END PROBLEM]
 
-
-[BEGIN PROBLEM]\nInput-output test cases:
-  Case 1. x0 = 1, x1 = [2, 3, 0] --> [3, 7, 1]
-  Case 2. x0 = 2, x1 = [1] --> [1]
-  Case 3. x0 = 4, x1 = [3, 2, 2] --> [7, 3, 3]
+Input-output test cases:
+  Case 1. Input: x0 = 1, x1 = [2, 3, 0] Output: [3, 7, 1]
+  Case 2. Input: x0 = 2, x1 = [1] Output: [1]
+  Case 3. Input: x0 = 4, x1 = [3, 2, 2] Output: [7, 3, 3]
 \nProgram:
 ```python\ndef program(x0, x1):
   x2 = dsl.Map(dsl.MINUS_ONE, x1)
@@ -160,8 +156,8 @@ The `dsl` module is a custom library for manipulating lists of integers. It cont
   x4 = dsl.ZipWith(dsl.SUBTRACT, x3, x2)
   return x4
 ```
-You are an expert Python programmer. Write a Python function `program` for the following rule.
-{{rule}} 
+You are an expert programmer. Write a function `program` using `dsl` module for the following rule.
+{rule}
 """
 
 
@@ -260,8 +256,7 @@ def rule_dsl_description(dataset_type: str, version: int) -> str:
 def get_prompt_prefix(dataset_element: DatasetElement,
                       dataset_type: str) -> str:
   """Gets a prefix of the prompt describing one dataset element."""
-  s = '[BEGIN PROBLEM]\n'
-  s += 'Input-output test cases:\n'
+  s = 'Input-output test cases:\n'
   for i in range(get_num_examples(dataset_element.inputs, dataset_type)):
     s += f'  Case {i + 1}. '
     if dataset_type == 'deepcoder':
@@ -298,18 +293,17 @@ def few_shot_prompt(few_shot_examples: list[DatasetElement],
 def get_rule_prompt_prefix(dataset_element: DatasetElement,
                       dataset_type: str) -> str:
   """Gets a prefix of the prompt describing one dataset element."""
-  s = '[BEGIN PROBLEM]\n'
-  s += 'Input-output test cases:\n'
+  s = 'Input-output test cases:\n'
   for i in range(get_num_examples(dataset_element.inputs, dataset_type)):
-    s += f'  Case {i + 1}. '
+    s += f'  Case {i + 1}. Input: '
     if dataset_type == 'deepcoder':
       sep = ''
       for name in dataset_element.inputs:
         s += f'{sep}{name} = {dataset_element.inputs[name][i]}'
         sep = ', '
-      s += f' --> {dataset_element.outputs[i]}\n'
+      s += f' Output: {dataset_element.outputs[i]}\n'
     elif dataset_type == 'robustfill':
-      s += f'"{dataset_element.inputs[i]}" --> "{dataset_element.outputs[i]}"\n'
+      s += f'"{dataset_element.inputs[i]}" Output: "{dataset_element.outputs[i]}"\n'
     else:
       raise ValueError(f'Unhandled dataset type: {dataset_type}')
   s += rule_prompt
@@ -324,3 +318,4 @@ def few_shot_rule_prompt(few_shot_examples: list[DatasetElement],
   # prompt_parts.extend(get_prompt(d, dataset_type) for d in few_shot_examples)
   prompt_parts.append(get_rule_prompt_prefix(test_problem, dataset_type))
   return '\n'.join(prompt_parts)
+  # return get_rule_prompt_prefix(test_problem, dataset_type)

@@ -13,12 +13,10 @@ from prompts.arc import (
     rule_prompt,
     rule_to_output_prompt,
     rule_to_output_prompt_with_format,
-    rule_to_python_prompt,
     rule_with_feedback_prompt,
-    rule_to_python_prompt,
 )
-from prompts.deepcoder import few_shot_prompt, fewshot_coc_prompt, few_shot_rule_prompt
-from tasks.base import Task
+from prompts.deepcoder import few_shot_prompt, fewshot_coc_prompt, few_shot_rule_prompt, rule_to_python_prompt
+from tasks.base import PythonTask
 from utils.format_utils import str_to_list
 from utils.query_utils import CLAUDE_MODELS
 import utils.deepcoder_dsl as deepcoder_dsl 
@@ -60,7 +58,7 @@ PRINT_NUM = 3
 CACHE_FILE = "query_cache.pkl"
 HISTORY_FILE = "history.jsonl"
 
-class DeepCoder(Task):
+class DeepCoder(PythonTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.model_name in CLAUDE_MODELS:
@@ -89,21 +87,21 @@ class DeepCoder(Task):
         output_dict = self.get_metrics("test", all_test_outputs)
         return output_dict
 
-    def get_rule(self, response):
-        result = []
-        json_response = eval(response)
-        for i, step in enumerate(json_response['steps'], start=1):
-            subrule = step['Subrule']
-            input_data = step['input']
-            output_data = step['output']
-            result.append(f"Step {i}: {subrule} Input: {input_data}, Output: {output_data}")
-
-        # Append the rule at the end
-        result.append(f"Rule: {json_response['rule']}")
-
-        # Join the list into a single string
-        final_output = '. '.join(result)
-        return final_output
+    # def get_rule(self, response):
+    #     result = []
+    #     json_response = eval(response)
+    #     for i, step in enumerate(json_response['steps'], start=1):
+    #         subrule = step['Subrule']
+    #         input_data = step['input']
+    #         output_data = step['output']
+    #         result.append(f"Step {i}: {subrule} Input: {input_data}, Output: {output_data}")
+    #
+    #     # Append the rule at the end
+    #     result.append(f"Rule: {json_response['rule']}")
+    #
+    #     # Join the list into a single string
+    #     final_output = '. '.join(result)
+    #     return final_output
 
     def canonicalize(self, grid):
         try:
@@ -188,8 +186,8 @@ class DeepCoder(Task):
         num_train = len(self.data)
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
-            # prompts.append(few_shot_prompt(few_shot_examples, train_set, 'deepcoder'))
-            prompts.append(few_shot_rule_prompt(few_shot_examples, train_set, 'deepcoder'))
+            prompts.append(few_shot_prompt(few_shot_examples, train_set, 'deepcoder'))
+            # prompts.append(few_shot_rule_prompt(few_shot_examples, train_set, 'deepcoder'))
             # prompts.append(fewshot_coc_prompt(train_set))
 
 
@@ -221,8 +219,8 @@ class DeepCoder(Task):
             for idx, response in zip(idxs, responses):
                 idx_to_response[idx] = response
 
-            # rules = [self.get_rule(response) for response in responses]
-            rules = [response for response in responses]
+            rules = [self.get_rule(response) for response in responses]
+            # rules = [response for response in responses]
             
             self.add_rules(idxs, rules)
 
@@ -343,17 +341,53 @@ class DeepCoder(Task):
             index += length
         return list3
     
+    # def apply_all_rules(self, idxs, all_rules, all_examples, program_name: str = 'program'):
+    #     # if self.interpreter_type == "lm":
+    #     #     return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
+    #     # if self.rule_type != "python":
+    #     #     all_rules = self.rules_to_programs(idxs, all_rules)
+    #     #     programs = [extract_program(rule) for rule in all_rules]
+    #     # else:
+    #     all_outputs = []
+    #     namespace = get_namespace('deepcoder')
+    #
+    #     for dsl_program, inputs, i in zip(all_rules, all_examples, range(len(all_rules))):
+    #         namespace_copy = namespace.copy()
+    #         keys = inputs['input'].keys()
+    #         call_code = f'{program_name}({", ".join(keys)})'
+    #         program_code = extract_program(dsl_program)
+    #         try:
+    #             exec(program_code, namespace_copy)  # pylint: disable=exec-used
+    #         except Exception as e:  # pylint: disable=bare-except
+    #             print(f"An error occurred:{e}")
+    #
+    #
+    #         result = []
+    #         for i in range(len(inputs['output'])):
+    #             for input_name, input_values in inputs['input'].items():
+    #                 namespace_copy[input_name] = input_values[i]
+    #                     # Call the solution function.
+    #             try:
+    #                 output = eval(call_code, namespace_copy)  # pylint: disable=eval-used
+    #             except:
+    #                 output = None
+    #             result.append(output)
+    #
+    #         all_outputs.append(result)
+    #
+    #     return all_outputs
+
     def apply_all_rules(self, idxs, all_rules, all_examples, program_name: str = 'program'):
-        # if self.interpreter_type == "lm":
-        #     return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
-        # if self.rule_type != "python":
-        #     all_rules = self.rules_to_programs(idxs, all_rules)
-        #     programs = [extract_program(rule) for rule in all_rules]
-        # else:
+        if self.interpreter_type == "lm":
+            return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
+        if self.rule_type != "python":
+            all_rules = self.rules_to_programs(idxs, all_rules)
+
+        programs = [extract_program(rule) for rule in all_rules]
         all_outputs = []
         namespace = get_namespace('deepcoder')
 
-        for dsl_program, inputs, i in zip(all_rules, all_examples, range(len(all_rules))):
+        for dsl_program, inputs, i in zip(programs, all_examples, range(len(all_rules))):
             namespace_copy = namespace.copy()
             keys = inputs['input'].keys()
             call_code = f'{program_name}({", ".join(keys)})'
@@ -363,12 +397,11 @@ class DeepCoder(Task):
             except Exception as e:  # pylint: disable=bare-except
                 print(f"An error occurred:{e}")
 
-            
             result = []
             for i in range(len(inputs['output'])):
                 for input_name, input_values in inputs['input'].items():
                     namespace_copy[input_name] = input_values[i]
-                        # Call the solution function.
+                    # Call the solution function.
                 try:
                     output = eval(call_code, namespace_copy)  # pylint: disable=eval-used
                 except:
@@ -377,27 +410,6 @@ class DeepCoder(Task):
 
             all_outputs.append(result)
 
-        return all_outputs
-
-    def apply_all_rules(self, idxs, all_rules, all_examples):
-        if self.interpreter_type == "lm":
-            return self.apply_all_rules_with_lm(idxs, all_rules, all_examples)
-        if self.rule_type != "python":
-            all_rules = self.rules_to_programs(idxs, all_rules)
-            programs = [extract_program(rule) for rule in all_rules]
-        else:
-            programs = all_rules
-        all_outputs = []
-
-        total = len(all_examples)
-        for examples, program in tqdm(
-            zip(all_examples, programs), desc="Applying rules", total=total
-        ):
-            inputs = copy.deepcopy(
-                [self.get_python_input(ex["input"]) for ex in examples]
-            )
-            outputs = execute_function(program, inputs)
-            all_outputs.append(outputs)
         return all_outputs
     
     def rules_to_programs(self, idxs, all_rules):
