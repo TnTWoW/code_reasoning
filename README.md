@@ -2,6 +2,11 @@
 
 This repository contains code for the paper "Unveiling the Magic of Code Reasoning through Hypothesis Decomposition and Amendment"
 
+
+## VirtualHome
+![](figs/cleaning.gif)
+![](figs/Store_the_pie.gif)
+
 ## Setup
 
 1. Set up the OpenAI API key and Anthropic API key. Store them in the environment variables `OPENAI_API_KEY` and `ANTHROPIC_API_KEY`.
