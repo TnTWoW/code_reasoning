@@ -13,9 +13,19 @@ Deductive code reasoning can be instantiated as an output prediction task, inclu
 ### Abductive Code Reasoning
 Abductive code reasoning is formulated as an input prediction task, including two tasks: CRUXEval-I and LiveCodeBench-I.
 
-## Method: Hypothesis Decomposition and Amendment
+## Method: Reflective Hypothesis Decomposition and Amendment
+Reflective Hypothesis Decomposition and Amendment (RHDA) is a novel framework that leverages iterative hypothesis refinement to decompose the reasoning process into a sequence of hypotheses and amend the hypotheses through tool-augment refinement. RHDA is a general framework that can be applied to various code reasoning tasks.
 
-### VirtualHome
+### RHDA on Inductive Code Reasoning
+![](figs/in_method.jpg)
+
+### RHDA on Deductive Code Reasoning
+![](figs/de_method.jpg)
+
+### RHDA on Abductive Code Reasoning
+![](figs/ab_method.jpg)
+
+### RHDA on VirtualHome
 ![](figs/cleaning.gif)
 ![](figs/Store_the_pie.gif)
 
