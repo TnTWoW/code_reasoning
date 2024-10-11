@@ -2,8 +2,20 @@
 
 This repository contains code for the paper "Unveiling the Magic of Code Reasoning through Hypothesis Decomposition and Amendment"
 
+![](figs/intro.jpg)
 
-## VirtualHome
+## Code Reasoning
+Code reasoning is a category of tasks that incorporates logical reasoning into code, aiming to solve programming problems through logical reasoning.
+### Inductive Code Reasoning
+Inductive code reasoning is concretized as a Programming by Example task, including four tasks: List Function, MiniARC, RubostFill and Deepcoder
+### Deductive Code Reasoning
+Deductive code reasoning can be instantiated as an output prediction task, including two tasks: CRUXEval-O and LiveCodeBench-O.
+### Abductive Code Reasoning
+Abductive code reasoning is formulated as an input prediction task, including two tasks: CRUXEval-I and LiveCodeBench-I.
+
+## Method: Hypothesis Decomposition and Amendment
+
+### VirtualHome
 ![](figs/cleaning.gif)
 ![](figs/Store_the_pie.gif)
 
