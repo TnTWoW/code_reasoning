@@ -15,8 +15,6 @@ from utils.query_utils import CACHE_FILE, HISTORY_FILE
 from utils.dsl import load_robustfill_dataset
 from utils.deepcoder_dsl import load_deepcoder_dataset
 
-os.environ["http_proxy"] = "http://127.0.0.1:7890"
-os.environ["https_proxy"] = "http://127.0.0.1:7890"
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
