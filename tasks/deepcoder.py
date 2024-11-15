@@ -186,8 +186,8 @@ class DeepCoder(PythonTask):
         num_train = len(self.data)
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
-            prompts.append(few_shot_prompt(few_shot_examples, train_set, 'deepcoder'))
-            # prompts.append(few_shot_rule_prompt(few_shot_examples, train_set, 'deepcoder'))
+            # prompts.append(few_shot_prompt(few_shot_examples, train_set, 'deepcoder'))
+            prompts.append(few_shot_rule_prompt(few_shot_examples, train_set, 'deepcoder'))
             # prompts.append(fewshot_coc_prompt(train_set))
 
 

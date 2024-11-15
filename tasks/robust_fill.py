@@ -182,8 +182,8 @@ class RobustFill(PythonTask):
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
             # prompts.append(rule_prompt(train_set))
-            prompts.append(fewshot_coc_prompt(train_set))
-            # prompts.append(few_shot_prompt(few_shot_examples[:2], train_set))
+            # prompts.append(fewshot_coc_prompt(train_set))
+            prompts.append(few_shot_prompt(few_shot_examples[:2], train_set))
 
 
         idxs = list(range(len(self.data)))

@@ -183,7 +183,7 @@ class Task:
         if '8B' in self.model_name:
             os.environ["CUDA_VISIBLE_DEVICES"] = "0"
         if '70B' in self.model_name:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "6, 7"
         local_model = '/data/share_weight/' + self.model_name
         pipeline = transformers.pipeline(
             "text-generation",
