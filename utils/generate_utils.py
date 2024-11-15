@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 GPT_MODELS = {"gpt-3.5-turbo-0613", "gpt-4-0613"}
 CLAUDE_MODELS = {"claude-2"}
-LLAMA_MODELS = {"Llama-3-70B-Instruct, Llama-3-8B-Instruct, Llama-3-8B, Llama-3-70B"}
+LLAMA_MODELS = {"Llama-3.1-70B-Instruct, Llama-3.1-8B-Instruct"}
 SYSTEM_MSG = [{"role": "system", "content": "You are a professional Python programmer. Please write a Python program according to the instructions."}]
 
 def generate_llama(
@@ -43,7 +43,6 @@ def generate_llama(
         prompt = [{"role": "user", "content": prompt}]
         if his is not None:
             prompt = his + prompt
-        prompt = SYSTEM_MSG + prompt
         prompt = pipeline.tokenizer.apply_chat_template(
             prompt,
             tokenize=False,
@@ -58,7 +57,8 @@ def generate_llama(
             top_p=0.9,
             num_return_sequences=n,
         )
-
+        with open(history_file, "a") as f:
+            f.write(json.dumps((model_name, prompt, response)) + "\n")
         response = [sample['generated_text'][len(prompt):] for sample in response]
         if n == 1:
             response = response[0]

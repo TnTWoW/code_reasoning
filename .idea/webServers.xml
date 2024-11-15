@@ -9,8 +9,8 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
-      <webServer id="1b5dbcb5-9be9-483d-8c9c-ec58801923f4" name="A800-01">
-        <fileTransfer rootFolder="/data2/yzzhao" accessType="SFTP" host="210.45.70.162" port="1741" sshConfigId="c8f2c95a-23e1-4e36-b47e-8124da15abbb" sshConfig="yzzhao@210.45.70.162:1741 password">
+      <webServer id="3065ba55-3087-4b6e-9856-3d06ee4b5cd6" name="A800-1">
+        <fileTransfer rootFolder="/data/yzzhao" accessType="SFTP" host="210.45.70.162" port="1741" sshConfigId="c8f2c95a-23e1-4e36-b47e-8124da15abbb" sshConfig="yzzhao@210.45.70.162:1741 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

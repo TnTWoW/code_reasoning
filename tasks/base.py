@@ -181,8 +181,10 @@ class Task:
 
     def load_model(self):
         if '8B' in self.model_name:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "4"
-        local_model = '/data2/share_weight/' + self.model_name
+            os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+        if '70B' in self.model_name:
+            os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+        local_model = '/data/share_weight/' + self.model_name
         pipeline = transformers.pipeline(
             "text-generation",
             model=local_model,
