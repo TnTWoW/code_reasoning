@@ -27,7 +27,8 @@ MODEL2COST = {
     "gpt-3.5-turbo-0613": {"input": 0.0015, "output": 0.002},
     "gpt-4-0613": {"input": 0.03, "output": 0.06},
     "gpt-4o": {"input": 0.0000025, "output": 0.0000075},
-    "gpt-4o-2024-08-06": {"input": 0.00000125, "output": 0.000005},
+    "gpt-4o-2024-08-06": {"input": 0.0025, "output": 0.01},
+    "claude-2": {"input": 0.000003, "output": 0.00001},
 }
 
 MODEL2BATCH_SIZE = {
@@ -38,9 +39,10 @@ MODEL2BATCH_SIZE = {
     "llama3": 500,
     "gpt-4o": 500,
     "gpt-4o-2024-08-06": 500,
+    "qwen-max": 500,
 }
 
-GPT_MODELS = {"gpt-3.5-turbo-0613", "gpt-4-0613", "gpt-4o", "gpt-4o-2024-08-06", "claude-3-5-sonnet-20240620"}
+GPT_MODELS = {"gpt-3.5-turbo-0613", "gpt-4-0613", "gpt-4o", "gpt-4o-2024-08-06", "claude-3-5-sonnet-20240620", "qwen-max"}
 CLAUDE_MODELS = {"claude-2"}
 LLAMA_MODELS = {"Llama-3-70B-Instruct, Llama-3-8B-Instruct, Llama-3-8B, Llama-3-70B"}
 class Step(BaseModel):
@@ -138,7 +140,8 @@ async def query_openai(
         kwargs["max_tokens"] = max_tokens
     kwargs["temperature"] = temperature
     kwargs["n"] = n
-    aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="https://aihubmix.com/v1")
+    # aclient = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="https://aihubmix.com/v1")
+    aclient = AsyncOpenAI(api_key=os.environ["DASHSCOPE_API_KEY"], base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
     # response = await aclient.chat.completions.create(model=model_name, messages=messages, **kwargs)
     for i in range(retry + 1):
         wait_time = (1 << min(i, EXP_CAP)) + random() / 10

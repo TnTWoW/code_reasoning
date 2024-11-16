@@ -34,6 +34,7 @@ import collections
 
 from typing import Any, Union
 import utils.dsl as robustfill_dsl
+import signal
 ROBUSTFILL_ENUMS = [
     robustfill_dsl.Type, robustfill_dsl.Case, robustfill_dsl.Boundary,
 ]
@@ -58,6 +59,8 @@ PRINT_NUM = 3
 CACHE_FILE = "query_cache.pkl"
 HISTORY_FILE = "history.jsonl"
 
+def handler(signum, frame):
+    raise Exception("Time out error")
 class DeepCoder(PythonTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -386,26 +389,30 @@ class DeepCoder(PythonTask):
         programs = [extract_program(rule) for rule in all_rules]
         all_outputs = []
         namespace = get_namespace('deepcoder')
-
+        signal.signal(signal.SIGALRM, handler)
         for dsl_program, inputs, i in zip(programs, all_examples, range(len(all_rules))):
             namespace_copy = namespace.copy()
             keys = inputs['input'].keys()
             call_code = f'{program_name}({", ".join(keys)})'
             program_code = extract_program(dsl_program)
+            signal.alarm(3)
             try:
                 exec(program_code, namespace_copy)  # pylint: disable=exec-used
             except Exception as e:  # pylint: disable=bare-except
                 print(f"An error occurred:{e}")
-
+            signal.alarm(0)
             result = []
             for i in range(len(inputs['output'])):
                 for input_name, input_values in inputs['input'].items():
                     namespace_copy[input_name] = input_values[i]
                     # Call the solution function.
+                signal.alarm(3)
                 try:
                     output = eval(call_code, namespace_copy)  # pylint: disable=eval-used
                 except:
                     output = None
+                signal.alarm(0)
+
                 result.append(output)
 
             all_outputs.append(result)

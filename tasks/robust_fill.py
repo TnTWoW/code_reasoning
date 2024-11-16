@@ -4,7 +4,8 @@ from prompts.robustfill import (rule_prompt,
                                 feedback_prompt,
                                 rule_with_feedback_prompt,
                                 example_prompt,
-                                fewshot_coc_prompt,)
+                                fewshot_coc_prompt,
+                                few_shot_prompt,)
 from prompts.arc import io_prompt
 from tasks.base import PythonTask
 from utils.format_utils import str_to_list
@@ -181,9 +182,9 @@ class RobustFill(PythonTask):
         num_train = len(self.data)
         for train_index in range(num_train):
             train_set, few_shot_examples, test_set = self.data[train_index]
-            # prompts.append(rule_prompt(train_set))
+            prompts.append(rule_prompt(train_set))
             # prompts.append(fewshot_coc_prompt(train_set))
-            prompts.append(few_shot_prompt(few_shot_examples[:2], train_set))
+            # prompts.append(few_shot_prompt(few_shot_examples[:2], train_set))
 
 
         idxs = list(range(len(self.data)))
