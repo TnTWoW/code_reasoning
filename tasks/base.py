@@ -180,10 +180,10 @@ class Task:
         return responses
 
     def load_model(self):
-        if '8B' in self.model_name:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-        if '70B' in self.model_name:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "6, 7"
+        # if '8B' in self.model_name:
+        #     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+        # if '70B' in self.model_name:
+        #     os.environ["CUDA_VISIBLE_DEVICES"] = "2, 3"
         local_model = '/data/share_weight/' + self.model_name
         pipeline = transformers.pipeline(
             "text-generation",

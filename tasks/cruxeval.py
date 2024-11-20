@@ -152,13 +152,19 @@ class CruxEvalInput(CruxEval):
             idxs.append(i)
         idx_to_response = [None for _ in range(len(self.data))]
 
+        if self.mode == "generate":
+            self.load_model()
+
         for i in range(self.max_iter):
             logger.info(
                 f"======= Iteration {i}: query {len(prompts)} examples =========="
             )
             histories = self.get_histories(idxs)
             assert len(histories) == len(idxs)
-            responses = self.query(prompts, idxs, histories=histories)
+            if self.mode == "generate":
+                responses = self.generate(prompts, idxs, histories=histories)
+            else:
+                responses = self.query(prompts, idxs, histories=histories)
             if self.n > 1:
                 all_train_examples = self.get_all_examples("train", idxs)
                 logger.info(f"Reranking {len(all_train_examples)} train examples...")
@@ -277,13 +283,19 @@ class CruxEvalOutput(CruxEval):
             idxs.append(i)
         idx_to_response = [None for _ in range(len(self.data))]
 
+        if self.mode == "generate":
+            self.load_model()
+
         for i in range(self.max_iter):
             logger.info(
                 f"======= Iteration {i}: query {len(prompts)} examples =========="
             )
             histories = self.get_histories(idxs)
             assert len(histories) == len(idxs)
-            responses = self.query(prompts, idxs, histories=histories)
+            if self.mode == "generate":
+                responses = self.generate(prompts, idxs, histories=histories)
+            else:
+                responses = self.query(prompts, idxs, histories=histories)
             if self.n > 1:
                 all_train_examples = self.get_all_examples("train", idxs)
                 logger.info(f"Reranking {len(all_train_examples)} train examples...")

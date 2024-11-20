@@ -395,12 +395,12 @@ class DeepCoder(PythonTask):
             keys = inputs['input'].keys()
             call_code = f'{program_name}({", ".join(keys)})'
             program_code = extract_program(dsl_program)
-            signal.alarm(3)
+            # signal.alarm(3)
             try:
                 exec(program_code, namespace_copy)  # pylint: disable=exec-used
             except Exception as e:  # pylint: disable=bare-except
                 print(f"An error occurred:{e}")
-            signal.alarm(0)
+            # signal.alarm(0)
             result = []
             for i in range(len(inputs['output'])):
                 for input_name, input_values in inputs['input'].items():
@@ -422,7 +422,7 @@ class DeepCoder(PythonTask):
     def rules_to_programs(self, idxs, all_rules):
         prompts = [self.rule_to_python_prompt.format(rule=rule) for rule in all_rules]
         if self.mode == "generate":
-            responses = self.generate(prompts, idxs, histories=None)
+            responses = self.generate(prompts, idxs, n=1, temperature=0, histories=None)
         else:
             responses = self.query(prompts, idxs, n=1, temperature=0, histories=None)
         return responses
