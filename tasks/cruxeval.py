@@ -8,11 +8,13 @@ from tqdm import tqdm
 
 from prompts.cruxeval import (
     input_prompt,
+    input_feedback_prompt,
     cot_input_prompt,
     coc_input_prompt,
     rule_input_prompt,
     rule_with_feedback_input_prompt,
     output_prompt,
+    output_feedback_prompt,
     cot_output_prompt,
     coc_output_prompt,
     rule_output_prompt,
@@ -70,6 +72,7 @@ class CruxEvalInput(CruxEval):
         self.coc_prompt = coc_input_prompt
         self.rule_prompt = rule_input_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_input_prompt
+        self.input_feedback_prompt = input_feedback_prompt
 
     def extract_input_prediction(self, text):
         pattern = r'f\((.*?)\)'
@@ -106,7 +109,10 @@ class CruxEvalInput(CruxEval):
         p_input = copy.deepcopy([pred_input])
         pred_outputs = execute_function(code, p_input)[0]
         if safe_literal_eval(output) != pred_outputs:
-            return self.rule_with_feedback_prompt.format(code=code, output=output, rule=rule, p_input=p_input)
+            if self.rule_type == 'io':
+                return self.input_feedback_prompt.format(code=code, output=output, p_input=p_input)
+            else:
+                return self.rule_with_feedback_prompt.format(code=code, output=output, rule=rule, p_input=p_input)
         return ""
 
     def get_best_outputs(self, responses):
@@ -135,14 +141,63 @@ class CruxEvalInput(CruxEval):
                 raise ValueError(f"Invalid rule type: {self.rule_type}")
             prompts.append(prompt)
             idxs.append(i)
+
+        idx_to_response = [None for _ in range(len(self.data))]
+
         if self.mode == "generate":
             self.load_model()
-            responses = self.generate(prompts, idxs, histories=None)
-        else:
-            responses = self.query(prompts, idxs, histories=None)
-        responses = self.get_best_outputs(responses)
-        metrics = self.get_metrics(all_codes, responses, all_outputs)
-        self.metrics.append(metrics)
+
+        for i in range(self.max_iter):
+            logger.info(
+                f"======= Iteration {i}: query {len(prompts)} examples =========="
+            )
+            histories = self.get_histories(idxs)
+            assert len(histories) == len(idxs)
+            if self.mode == "generate":
+                responses = self.generate(prompts, idxs, histories=histories)
+            else:
+                responses = self.query(prompts, idxs, histories=histories)
+            if self.n > 1:
+                all_train_examples = self.get_all_examples("train", idxs)
+                logger.info(f"Reranking {len(all_train_examples)} train examples...")
+                if self.verbose:
+                    logger.info(f"Responses before reranking:")
+                    for res in responses[:PRINT_NUM]:
+                        logger.info(res)
+                responses = self.get_best_responses(idxs, all_train_examples, responses)
+            for idx, response in zip(idxs, responses):
+                idx_to_response[idx] = response
+
+            rules = [self.extract_rules(response) for response in responses]
+            self.add_rules(idxs, rules)
+
+            if self.max_iter > 1:
+                self.add_histories("user", idxs, prompts)
+                self.add_histories("assistant", idxs, responses)
+
+                all_train_inputs = [self.extract_input_prediction(response) for response in responses]
+                all_inputs = self.get_all_examples("input", idxs)
+                all_codes = self.get_all_examples("code", idxs)
+                all_outputs = self.get_all_examples("output", idxs)
+                prompts = []
+                new_idxs = []
+                for idx, rule, code, output, train_inputs, inputs in \
+                        tqdm(zip(idxs, rules, all_codes, all_outputs, all_train_inputs, all_inputs),
+                             desc="Generating feedback", total=len(idxs)):
+                    prompt = self.get_feedback(code, output, rule, train_inputs, inputs)
+                    if prompt == "":
+                        continue
+                    prompts.append(prompt)
+                    new_idxs.append(idx)
+                idxs = new_idxs
+
+                if len(prompts) == 0:
+                    logger.info(f"No more feedback, break at iteration {i}")
+                    break
+
+        if self.eval_every <= 0:
+            metrics = self.eval_test_from_rule(idx_to_response)
+            self.metrics.append(metrics)
 
     def eval_rule(self):
         all_codes = self.get_all_examples("code")
@@ -218,6 +273,7 @@ class CruxEvalOutput(CruxEval):
         self.coc_prompt = coc_output_prompt
         self.rule_prompt = rule_output_prompt
         self.rule_with_feedback_prompt = rule_with_feedback_output_prompt
+        self.output_feedback_prompt = output_feedback_prompt
 
     def extract_output_prediction(self, text):
         pattern = r'==\s*(.*?)\s*```'
@@ -243,7 +299,10 @@ class CruxEvalOutput(CruxEval):
         return output_dict
     def get_feedback(self, code, input, rule, p_output, output):
         if safe_literal_eval(p_output) != ast.literal_eval(output):
-            return self.rule_with_feedback_prompt.format(code=code, input=input, rule=rule, p_output=p_output)
+            if self.rule_type == 'io':
+                return self.output_feedback_prompt.format(code=code, input=input, p_output=p_output)
+            else:
+                return self.rule_with_feedback_prompt.format(code=code, input=input, rule=rule, p_output=p_output)
         return ""
 
     def get_best_outputs(self, responses):
@@ -270,14 +329,61 @@ class CruxEvalOutput(CruxEval):
                 prompt = self.coc_prompt.format(code=code, input=input)
             prompts.append(prompt)
             idxs.append(i)
+
+        idx_to_response = [None for _ in range(len(self.data))]
+
         if self.mode == "generate":
             self.load_model()
-            responses = self.generate(prompts, idxs, histories=None)
-        else:
-            responses = self.query(prompts, idxs, histories=None)
-        responses = self.get_best_outputs(responses)
-        metrics = self.get_metrics(responses)
-        self.metrics.append(metrics)
+
+        for i in range(self.max_iter):
+            logger.info(
+                f"======= Iteration {i}: query {len(prompts)} examples =========="
+            )
+            histories = self.get_histories(idxs)
+            assert len(histories) == len(idxs)
+            if self.mode == "generate":
+                responses = self.generate(prompts, idxs, histories=histories)
+            else:
+                responses = self.query(prompts, idxs, histories=histories)
+            if self.n > 1:
+                all_train_examples = self.get_all_examples("train", idxs)
+                logger.info(f"Reranking {len(all_train_examples)} train examples...")
+                if self.verbose:
+                    logger.info(f"Responses before reranking:")
+                    for res in responses[:PRINT_NUM]:
+                        logger.info(res)
+                responses = self.get_best_responses(idxs, all_train_examples, responses)
+            for idx, response in zip(idxs, responses):
+                idx_to_response[idx] = response
+
+            rules = [self.extract_rules(response) for response in responses]
+            self.add_rules(idxs, rules)
+
+            if self.max_iter > 1:
+                self.add_histories("user", idxs, prompts)
+                self.add_histories("assistant", idxs, responses)
+
+                all_train_outputs = [self.extract_output_prediction(response) for response in responses]
+                all_outputs = self.get_all_examples("output", idxs)
+                prompts = []
+                new_idxs = []
+                for idx, rule, code, input, train_outputs, outputs in zip(
+                        idxs, rules, all_codes, all_inputs, all_train_outputs, all_outputs
+                ):
+                    prompt = self.get_feedback(code, input, rule, train_outputs, outputs)
+                    if prompt == "":
+                        continue
+                    prompts.append(prompt)
+                    new_idxs.append(idx)
+                idxs = new_idxs
+
+                if len(prompts) == 0:
+                    logger.info(f"No more feedback, break at iteration {i}")
+                    break
+
+        if self.eval_every <= 0:
+            metrics = self.eval_test_from_rule(idx_to_response)
+            self.metrics.append(metrics)
 
     def eval_rule(self):
         all_codes = self.get_all_examples("code")

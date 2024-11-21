@@ -279,9 +279,9 @@ class LiveCodeBenchOutput(IOBase):
                     logger.info(f"No more feedback, break at iteration {i}")
                     break
 
-
-        metrics = self.eval_output_from_rule(idx_to_response)
-        self.metrics.append(metrics)
+        if self.eval_every <= 0:
+            metrics = self.eval_output_from_rule(idx_to_response)
+            self.metrics.append(metrics)
 
     def eval_rule(self):
         all_codes = self.get_all_examples("code")

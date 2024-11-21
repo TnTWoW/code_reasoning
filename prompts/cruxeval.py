@@ -20,6 +20,16 @@ Answer:
 ```python
 """
 
+input_feedback_prompt = """The predicted input {p_input} does not match the actual execution result. Please 
+regenerate the result for {output}
+
+```python
+{code}
+# assert f(??) == {output}
+```
+Answer:
+```python"""
+
 cot_input_prompt = """You will be given a function f and an output in the form f(??) == output. Your task is to find 
 any input such that executing f on the input leads to the given output. There may be multiple answers, 
 but only output one. First, think step by step. Express your answer as a passing assertion containing the input and 
@@ -146,6 +156,17 @@ Answer:
 ```python
 """
 
+output_feedback_prompt = """The predicted output {p_output} does not match the actual execution result.
+Please regenerate the result for {input}
+
+```python
+{code}
+# assert f({input}) == ??
+```
+Answer:
+```python
+"""
+
 cot_output_prompt = """You are given a Python function and an assertion containing an input to the function. Complete 
 the assertion with a literal (no unsimplified expressions, no function calls) containing the output when executing 
 the provided code on the given input, even if the function is incorrect or incomplete. Execute the program step by 
@@ -177,7 +198,7 @@ assert f("hi") == "bhihia"
 Let's execute the code step by step:
 """
 
-output_feedback_prompt = """The predicted output {p_output} does not match the actual execution result {output}.
+output_feedback_prompt = """The predicted output {p_output} does not match the actual execution result.
 Please regenerate the result for f({input})
  
 ```python
