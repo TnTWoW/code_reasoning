@@ -169,8 +169,8 @@ class ARC(PythonTask):
             for idx, response in zip(idxs, responses):
                 idx_to_response[idx] = response
 
-            rules = [self.get_rule(response) for response in responses]
             # rules = [self.get_rule(response) for response in responses]
+            rules = [self.get_struct_rule(response) for response in responses]
             self.add_rules(idxs, rules)
 
             if self.eval_every > 0 and i % self.eval_every == 0:

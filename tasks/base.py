@@ -163,10 +163,10 @@ class Task:
             key = prompt2key(prompt, history)
             if key not in self.cache:
                 self.cache[key] = response
-                cost = get_cost(
-                    prompt, response, model_name=self.model_name, history=history
-                )
-                self.cost += cost
+                # cost = get_cost(
+                #     prompt, response, model_name=self.model_name, history=history
+                # )
+                # self.cost += cost
             self.interactions[idx].append(
                 {
                     "query": prompt,

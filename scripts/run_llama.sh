@@ -1,11 +1,11 @@
 CUDA_VISIBLE_DEVICES=2,3 python run_task.py \
---task_name livecodebench_input \
+--task_name livecodebench_output \
 --data_file ./data/abductive/livecodebench.jsonl \
 --mode generate \
 --model_name Meta-Llama-3.1-70B-Instruct \
---output_file results/llama_livecodebench/cot_0.7 \
+--output_file results/llama_livecodebench_output/cot_0.7 \
 --cache_file results/llama_livecodebench_0.7_cache \
---history_file results/llama_list_function/cot_0.7_history \
+--history_file results/llama_livecodebench_output/cot_0.7_history \
 --max_iter 1 --n_sample 1 \
 --method io --rule_type cot \
 --temperature 0.7

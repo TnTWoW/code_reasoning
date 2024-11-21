@@ -135,7 +135,11 @@ class CruxEvalInput(CruxEval):
                 raise ValueError(f"Invalid rule type: {self.rule_type}")
             prompts.append(prompt)
             idxs.append(i)
-        responses = self.query(prompts, idxs, histories=None)
+        if self.mode == "generate":
+            self.load_model()
+            responses = self.generate(prompts, idxs, histories=None)
+        else:
+            responses = self.query(prompts, idxs, histories=None)
         responses = self.get_best_outputs(responses)
         metrics = self.get_metrics(all_codes, responses, all_outputs)
         self.metrics.append(metrics)
@@ -266,7 +270,11 @@ class CruxEvalOutput(CruxEval):
                 prompt = self.coc_prompt.format(code=code, input=input)
             prompts.append(prompt)
             idxs.append(i)
-        responses = self.query(prompts, idxs, histories=None)
+        if self.mode == "generate":
+            self.load_model()
+            responses = self.generate(prompts, idxs, histories=None)
+        else:
+            responses = self.query(prompts, idxs, histories=None)
         responses = self.get_best_outputs(responses)
         metrics = self.get_metrics(responses)
         self.metrics.append(metrics)

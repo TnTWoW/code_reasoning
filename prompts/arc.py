@@ -71,12 +71,14 @@ rules, step by step. Please format your rule as follows:
 
 Rule: <Your rule>"""
 
-rule_to_output_prompt = """Generate an output for the given input based on the following rule. The input is a 2D grid of integers. The output is also a 2D grid of integers.
+rule_to_output_prompt = """Generate output for a given input directly according to the following rules. The input is a 2D grid of integers. The output is also a 2D grid of integers.
 
 Rule: {rule}
 
 Input: {test_input}
-Output:"""
+
+Please format your output as follows:
+Output: <Your output>"""
 
 
 rule_to_output_prompt_with_format = """Generate an output for the given input based on the following rule. The input is a 2D grid of integers. The output is also a 2D grid of integers.

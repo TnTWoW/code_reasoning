@@ -17,7 +17,7 @@ def unformat_grid(grid_string, row_sep="\n", sep=", "):
     grid_string = grid_string.replace(f"]{row_sep}[", "], [")
     try:
         nested_list = ast.literal_eval(grid_string)
-        nested_list = [[str(x) for x in row] for row in nested_list]
+        # nested_list = [[str(x) for x in row] for row in nested_list]
         return nested_list
     except:
         rows = re.findall(r"\[.*?\]", grid_string)

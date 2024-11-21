@@ -104,6 +104,16 @@ assert {func_name}(<Your input>) == {output}
 ```
 """
 
+input_feedback_prompt = """The predicted input {p_input} does not match the actual execution result. Please 
+regenerate the result for {output}
+
+```{language}
+{code}
+# assert {func_name}(??) == {output}
+```
+Answer:
+```{language}"""
+
 rule_with_feedback_input_prompt = """You are given a piece of Python function:
 
 '''{language}
@@ -178,12 +188,12 @@ assert f("hi") == "bhihia"
 Let's execute the code step by step:
 """
 
-output_feedback_prompt = """The predicted output {p_output} does not match the actual execution result {output}.
+output_feedback_prompt = """The predicted output {p_output} does not match the actual execution result.
 Please regenerate the result for {input}
 
 ```{language}
 {code}
-# assert {input} == ??
+# assert {func_name}({input}) == ??
 ```
 Answer:
 ```{language}
@@ -260,7 +270,7 @@ Please provide the analysis and the assertion in the following format:
 Analysis: <Your analysis>
 Answer:
 ```{language}
-assert {input} == <Your output>
+assert {func_name}({input}) == <Your output>
 ```
 """
 
