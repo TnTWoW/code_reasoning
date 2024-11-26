@@ -31,7 +31,7 @@ class LiveCodeBenchInput(IOBase):
         self.cot_prompt = cot_input_prompt
         self.coc_prompt = coc_input_prompt
         self.rule_prompt = rule_input_prompt
-        self.rule_with_feedback_prompt = rule_with_feedback_input_prompt
+        self.rule_with_feedback_input_prompt = rule_with_feedback_input_prompt
         self.input_feedback_prompt = input_feedback_prompt
         self.language = "python"
 
@@ -44,7 +44,7 @@ class LiveCodeBenchInput(IOBase):
             if self.rule_type == "io":
                 return self.input_feedback_prompt.format(code=code, func_name=func_name, output=output, p_input=p_input, language=self.language)
             else:
-                return self.rule_with_feedback_prompt.format(code=code, func_name=func_name, output=output, rule=rule, p_input=p_input, language=self.language)
+                return self.rule_with_feedback_input_prompt.format(code=code, func_name=func_name, output=output, rule=rule, p_input=p_input, language=self.language)
         return ""
     def eval_io(self):
         all_codes = self.get_all_examples("code")
@@ -200,7 +200,7 @@ class LiveCodeBenchOutput(IOBase):
         self.cot_prompt = cot_output_prompt
         self.coc_prompt = coc_output_prompt
         self.rule_prompt = rule_output_prompt
-        self.rule_with_feedback_prompt = rule_with_feedback_output_prompt
+        self.rule_with_feedback_output_prompt = rule_with_feedback_output_prompt
         self.output_feedback_prompt = output_feedback_prompt
         self.language = "python"
 
