@@ -104,3 +104,16 @@ python run_task.py --task_name arc \
 ### RHDA on VirtualHome
 ![](figs/cleaning.gif)
 ![](figs/Store_the_pie.gif)
+
+# Citation
+If you find our work helpful, please consider citing our paper.
+```
+@inproceedings{
+zhao2025unveiling,
+title={Unveiling the Magic of Code Reasoning through Hypothesis Decomposition and Amendment},
+author={Yuze Zhao and Tianyun Ji and Wenjun Feng and Zhenya Huang and Qi Liu and Zhiding Liu and Yixiao Ma and Kai Zhang and Enhong Chen},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://openreview.net/forum?id=kN25ggeq1J}
+}
+```
